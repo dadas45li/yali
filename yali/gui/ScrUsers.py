@@ -20,7 +20,7 @@ _ = __trans.ugettext
 
 import yali.users
 from yali.gui.ScreenWidget import ScreenWidget
-from yali.gui.setupuserswidget import SetupUsersWidget
+from yali.gui.Ui.setupuserswidget import SetupUsersWidget
 import yali.gui.context as ctx
 import xcapslock
 
@@ -80,6 +80,9 @@ Click Next button to proceed.
         self.checkCapsLock()
 
     def execute(self):
+        # reset and fill pending_users
+        yali.users.reset_pending_users()
+
         for i in range(self.userList.count()):
             u = self.userList.item(i).getUser()
             yali.users.pending_users.add(u)

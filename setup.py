@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2005, TUBITAK/UEKAE
+# Copyright (C) 2005,2006 TUBITAK/UEKAE
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -28,7 +28,7 @@ YALI_VERSION = yali.__version__
 
 
 def qt_ui_files():
-    p = "yali/gui/*.ui"
+    p = "yali/gui/Ui/*.ui"
     return glob.glob(p)
 
 def gui_pics():
@@ -36,7 +36,7 @@ def gui_pics():
     return glob.glob(p + "/*.png")
 
 def gui_slidepics():
-    p = "yali/gui/slideshow/*.png"
+    p = "yali/gui/pics/slideshow/*.png"
     return glob.glob(p)
 
 def user_faces():
@@ -184,7 +184,7 @@ setup(name="yali",
       author="Pardus Developers",
       author_email="yali@uludag.org.tr",
       url="http://www.uludag.org.tr/eng/yali/",
-      packages = ['yali', 'yali.gui'],
+      packages = ['yali', 'yali.gui', 'yali.gui.Ui'],
       package_dir = {'': ''},
       data_files = [('/usr/share/yali/pics', gui_pics()),
                     ('/usr/share/yali/slideshow', gui_slidepics()),
