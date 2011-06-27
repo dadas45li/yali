@@ -87,6 +87,10 @@ class VolumeGroup(DeviceMapper):
         if not self.exists:
             self.pvCount = len(self.parents)
 
++        # Some snapshots don't have a proper LV as an origin (--vorigin).
++        # They still occupy space in the VG.
++        self.voriginSnapshots = {}
+
         #self.probe()
 
     def __str__(self):
@@ -351,6 +355,22 @@ class VolumeGroup(DeviceMapper):
             modified = False
 
         return modified
+ 
+    @property
+    def snapshotSpace(self):
+        """ Total space used by snapshots in this volume group. """
+        used = 0
+        for lv in self.lvs:
+            ctx.logger.debug("lv %s uses %dMB for snapshots" % (lv.lvname,
+                                                         lv.snapshotSpace))
+            used += self.align(lv.snapshotSpace, roundup=True)
+
+        for (vname, vsize) in self.voriginSnapshots.items():
+            ctx.logger.debug("snapshot %s with vorigin uses %dMB" % (vname, vsize))
+            used += self.align(vsize, roundup=True)
+
+        return used
+
 
     @property
     def size(self):
@@ -378,13 +398,9 @@ class VolumeGroup(DeviceMapper):
         # TODO: just ask lvm if isModified returns False
 
         # total the sizes of any LVs
-        used = 0
-        size = self.size
-        ctx.logger.debug("%s size is %dMB" % (self.name, size))
-        for lv in self.lvs:
-            ctx.logger.debug("lv %s uses %dMB" % (lv.name, lv.vgSpaceUsed))
-            used += self.align(lv.vgSpaceUsed, roundup=True)
-
+        # total the sizes of any LVs
+        ctx.logger.debug("%s size is %dMB" % (self.name, self.size))
+        used = sum(lv.vgSpaceUsed for lv in self.lvs) + self.snapshotSpace
         free = self.size - used
         ctx.logger.debug("vg %s has %dMB free" % (self.name, free))
         return free

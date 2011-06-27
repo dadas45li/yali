@@ -1067,16 +1067,20 @@ class DeviceTree(object):
 
                 origin = self.getDeviceByName("%s-%s" % (vg_name, origin_name))
                 if not origin:
-                    ctx.logger.warning("snapshot lv '%s' origin lv '%s-%s not found" %
-                                      (name, vg_name, origin_name))
+                    if origin_name.endswith("_vorigin]"):
+                        ctx.logger.info("snapshot volume '%s' has vorigin" % name)
+                        vg_device.voriginSnapshots[lv_name] = lv_sizes[index]
+                    else:
+                        ctx.logger.warning("snapshot lv '%s' origin lv '%s-%s' "
+                                           "not found" % (name, vg_name, origin_name))
                     continue
 
                 ctx.logger.debug("adding %dMB to %s snapshot total" %
                                 (lv_sizes[index], origin.name))
                 origin.snapshotSpace += lv_sizes[index]
                 continue
-            elif lv_attr[index][0] in 'Iil':
-                # skip mirror images and log volumes
++            elif lv_attr[index][0] in 'Iilv':
++                # skip mirror images, log volumes, and vorigins
                 continue
 
             log_size = 0
