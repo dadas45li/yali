@@ -346,6 +346,25 @@ def clearPartitions(storage):
         ctx.logger.debug("partitions: %s" % [p.getDeviceNodeName() for p in part.partedPartition.disk.partitions])
         storage.destroyDevice(part)
 
+    for disk in [d for d in storage.disks if d not in storage.partitioned]:
+        # clear any whole-disk formats that need clearing
+        if shouldClear(disk, storage.clearPartType, storage.clearPartDisks):
+            ctx.logger.debug("clearing %s" % disk.name)
+            devices = storage.deviceDeps(disk)
+            while devices:
+                ctx.logger.debug("devices to remove: %s" % ([d.name for d in devices],))
+                leaves = [d for d in devices if d.isleaf]
+                ctx.logger.debug("leaves to remove: %s" % ([d.name for d in leaves],))
+                for leaf in leaves:
+                    storage.destroyDevice(leaf)
+                    devices.remove(leaf)
+
+            destroy = OperationDestroyFormat(disk)
+            newLabel = getFormat("disklabel", device=disk.path)
+            create = OperationCreateFormat(disk, format=newLabel)
+            storage.devicetree.addOperation(destroy)
+            storage.devicetree.addOperation(create)
+
     # now remove any empty extended partitions
     removeEmptyExtendedPartitions(storage)
 
@@ -401,24 +420,6 @@ def removeEmptyExtendedPartitions(storage):
             extended = storage.devicetree.getDeviceByName(extended_name)
             storage.destroyDevice(extended)
 
-    for disk in [d for d in storage.disks if d not in storage.partitioned]:
-        # clear any whole-disk formats that need clearing
-        if shouldClear(disk, storage.clearPartType, storage.clearPartDisks):
-            ctx.logger.debug("clearing %s" % disk.name)
-            devices = storage.deviceDeps(disk)
-            while devices:
-                ctx.logger.debug("devices to remove: %s" % ([d.name for d in devices],))
-                leaves = [d for d in devices if d.isleaf]
-                ctx.logger.debug("leaves to remove: %s" % ([d.name for d in leaves],))
-                for leaf in leaves:
-                    storage.destroyDevice(leaf)
-                    devices.remove(leaf)
-
-            destroy = OperationDestroyFormat(disk)
-            newLabel = getFormat("disklabel", device=disk.path)
-            create = OperationCreateFormat(disk, format=newLabel)
-            storage.devicetree.addOperation(destroy)
-            storage.devicetree.addOperation(create)
 
 def partitionCompare(part1, part2):
     """ More specifically defined partitions come first.
