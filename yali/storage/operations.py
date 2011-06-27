@@ -116,24 +116,31 @@ class DeviceOperation(object):
         """ cancel the operation """
         pass
 
+    @property
     def isDestroy(self):
         return self.type == OPERATION_TYPE_DESTROY
 
+    @property
     def isCreate(self):
         return self.type == OPERATION_TYPE_CREATE
 
+    @property
     def isResize(self):
         return self.type == OPERATION_TYPE_RESIZE
 
+    @property
     def isShrink(self):
         return (self.type == OPERATION_TYPE_RESIZE and self.dir == RESIZE_SHRINK)
 
+    @property
     def isGrow(self):
         return (self.type == OPERATION_TYPE_RESIZE and self.dir == RESIZE_GROW)
 
+    @property
     def isDevice(self):
         return self.obj == OPERATION_OBJECT_DEVICE
 
+    @property
     def isFormat(self):
         return self.obj == OPERATION_OBJECT_FORMAT
 
@@ -143,8 +150,12 @@ class DeviceOperation(object):
 
     def __str__(self):
         s = "[%d] %s %s" % (self.id, operation_strings[self.type], object_strings[self.obj])
-        if self.isFormat():
+        if self.isResize:
+             s += " (%s)" % resize_type_from_strings[self.dir]
+        if self.isFormat:
             s += " %s on" % self.format.type
+        if self.isMigrate:
+             s += " to %s" % self.format.migrationTarget
         s += " %s %s (id %d)" % (self.device.type, self.device.name,
                                  self.device.id)
         return s

@@ -168,22 +168,22 @@ class DeviceTree(object):
         """ Register an operation to be performed at a later time.
 
         """
-        if (operation.isDestroy() or operation.isResize() or \
-            (operation.isCreate() and operation.isFormat())) and \
+        if (operation.isDestroy or operation.isResize or \
+            (operation.isCreate and operation.isFormat)) and \
            operation.device not in self._devices:
             raise DeviceTreeError("device is not in the tree")
-        elif (operation.isCreate() and operation.isDevice()):
+        elif (operation.isCreate and operation.isDevice):
             if operation.device in self._devices:
                 self._removeDevice(operation.device)
             for d in self._devices:
                 if d.path == operation.device.path:
                     self._removeDevice(d)
 
-        if operation.isCreate() and operation.isDevice():
+        if operation.isCreate and operation.isDevice:
             self._addDevice(operation.device)
-        elif operation.isDestroy() and operation.isDevice():
+        elif operation.isDestroy and operation.isDevice:
             self._removeDevice(operation.device)
-        elif operation.isCreate() and operation.isFormat():
+        elif operation.isCreate and operation.isFormat:
             if isinstance(operation.device.format, formats.filesystem.Filesystem) and \
                operation.device.format.mountpoint in self.filesystems:
                 raise DeviceTreeError("mountpoint already in use")
@@ -195,14 +195,14 @@ class DeviceTree(object):
         """ Cancel a registered operation.
 
         """
-        if operation.isCreate() and operation.isDevice():
+        if operation.isCreate and operation.isDevice:
             # remove the device from the tree
             self._removeDevice(operation.device)
-        elif operation.isDestroy() and operation.isDevice():
+        elif operation.isDestroy and operation.isDevice:
             # add the device back into the tree
             self._addDevice(operation.device)
-        elif operation.isFormat() and \
-             (operation.isCreate() or operation.isMigrate() or operation.isResize()):
+        elif operation.isFormat and \
+             (operation.isCreate or operation.isMigrate or operation.isResize):
             operation.cancel()
 
         self.operations.remove(operation)
@@ -253,11 +253,11 @@ class DeviceTree(object):
             if a1.isDestroy() and a2.isDestroy():
                 if a1.device.path == a2.device.path:
                     # if it's the same device, destroy the format first
-                    if a1.isFormat() and a2.isFormat():
+                    if a1.isFormat and a2.isFormat:
                         ret = 0
-                    elif a1.isFormat() and not a2.isFormat():
+                    elif a1.isFormat and not a2.isFormat:
                         ret = -1
-                    elif not a1.isFormat() and a2.isFormat():
+                    elif not a1.isFormat and a2.isFormat:
                         ret = 1
                 elif a1.device.dependsOn(a2.device):
                     ret = -1
@@ -295,13 +295,13 @@ class DeviceTree(object):
                 if a1.device.path == a2.device.path:
                     if a1.obj == a2.obj:
                         ret = 0
-                    elif a1.isFormat() and not a2.isFormat():
+                    elif a1.isFormat and not a2.isFormat:
                         # same path, one device, one format
                         if a1.isGrow():
                             ret = 1
                         else:
                             ret = -1
-                    elif not a1.isFormat() and a2.isFormat():
+                    elif not a1.isFormat and a2.isFormat:
                         # same path, one device, one format
                         if a1.isGrow():
                             ret = -1
@@ -328,13 +328,13 @@ class DeviceTree(object):
                 ret = -1
             elif a2.isResize():
                 ret = 1
-            elif a1.isCreate() and a2.isCreate():
+            elif a1.isCreate and a2.isCreate:
                 if a1.device.path == a2.device.path:
                     if a1.obj == a2.obj:
                         ret = 0
-                    if a1.isFormat():
+                    if a1.isFormat:
                         ret = 1
-                    elif a2.isFormat():
+                    elif a2.isFormat:
                         ret = -1
                     else:
                         ret = 0
@@ -364,11 +364,11 @@ class DeviceTree(object):
                     ret = 1
                 else:
                     ret = 0
-            elif a1.isCreate():
+            elif a1.isCreate:
                 ret = -1
-            elif a2.isCreate():
+            elif a2.isCreate:
                 ret = 1
-            elif a1.isMigrate() and a2.isMigrate():
+            elif a1.isMigrate and a2.isMigrate:
                 if a1.device.path == a2.device.path:
                     ret = 0
                 elif a1.device.dependsOn(a2.device):
@@ -514,7 +514,7 @@ class DeviceTree(object):
                 # only one device destroy, so prune preceding resizes and
                 # format creates and migrates
                 for _a in dev_operations[:]:
-                    if _a.isResize() or (_a.isFormat() and not _a.isDestroy()):
+                    if _a.isResize() or (_a.isFormat and not _a.isDestroy):
                         continue
 
                     dev_operations.remove(_a)
