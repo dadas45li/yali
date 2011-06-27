@@ -147,7 +147,7 @@ def lvm(args):
         raise LVMError(err)
 
 def pvcreate(device):
-    args = ["pvcreate"] + [device]
+    args = ["pvcreate"] + [device] + ["--dataalignment", "1024k"]
 
     try:
         lvm(args)

@@ -39,7 +39,7 @@ class PhysicalVolume(Format):
         Format.__init__(self, *args, **kwargs)
         self.vgName = kwargs.get("vgName")
         self.vgUuid = kwargs.get("vgUuid")
-        self.peStart = kwargs.get("peStart", 0.1875)    # in MB
+        self.peStart = kwargs.get("peStart", 1.0)    # in MB
 
     def __str__(self):
         s = Format.__str__(self)
