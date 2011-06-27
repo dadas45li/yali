@@ -95,11 +95,17 @@ class DeviceOperation(object):
 """
     type = OPERATION_TYPE_NONE
     obj = OPERATION_OBJECT_NONE
+    _id = 0
 
     def __init__(self, device):
         if not isinstance(device, Device):
             raise ValueError("arg 1 must be a Device instance")
         self.device = device
+        # Establish a unique id for each action instance. Making shallow or
+        # deep copyies of DeviceOperation instances will require __copy__ and
+        # __deepcopy__ methods to handle incrementing the id in the copy
+        self.id = DeviceOperation._id
+        DeviceOperation._id += 1
 
 
     def execute(self, intf=None):
@@ -136,7 +142,7 @@ class DeviceOperation(object):
         return self.device.format
 
     def __str__(self):
-        s = "%s %s" % (operation_strings[self.type], object_strings[self.obj])
+        s = "[%d] %s %s" % (self.id, operation_strings[self.type], object_strings[self.obj])
         if self.isFormat():
             s += " %s on" % self.format.type
         s += " %s %s (id %d)" % (self.device.type, self.device.name,
