@@ -183,6 +183,8 @@ class OperationCreateDevice(DeviceOperation):
     obj = OPERATION_OBJECT_DEVICE
 
     def __init__(self, device):
+        if device.exists:
+            raise ValueError("device already exists")
         # FIXME: assert device.fs is None
         DeviceOperation.__init__(self, device)
 
@@ -293,8 +295,11 @@ class OperationResizeDevice(DeviceOperation):
         if not device.resizable:
             raise ValueError("device is not resizable")
 
+        if long(math.floor(device.currentSize)) == newsize:
+            raise ValueError("new size same as old size")
+
         DeviceOperation.__init__(self, device)
-        if newsize > device.currentSize:
+        if newsize > long(math.floor(device.currentSize)):
             self.dir = RESIZE_GROW
         else:
             self.dir = RESIZE_SHRINK
@@ -470,7 +475,10 @@ class OperationResizeFormat(DeviceOperation):
     obj = OPERATION_OBJECT_FORMAT
 
     def __init__(self, device, newsize):
-        if device.format.targetSize == newsize:
+        if not device.format.resizable:
+            raise ValueError("format is not resizable")
+
+        if long(math.floor(device.format.currentSize)) == newsize:
             raise ValueError("new size same as old size")
 
         DeviceOperation.__init__(self, device)
