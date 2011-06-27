@@ -169,8 +169,7 @@ class DeviceTree(object):
         """ Register an operation to be performed at a later time.
 
         """
-        if (operation.isDestroy or operation.isResize or \
-            (operation.isCreate and operation.isFormat)) and \
+        if not (operation.isCreate and operation.isDevice) and \
            operation.device not in self._devices:
             raise DeviceTreeError("device is not in the tree")
         elif (operation.isCreate and operation.isDevice):
