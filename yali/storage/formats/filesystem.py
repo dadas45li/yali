@@ -237,11 +237,6 @@ class Filesystem(Format):
         if not os.path.exists(self.device):
             raise FilesystemMigrateError("device does not exist", self.device)
 
-        # if journal already exists skip
-        if yali.sysutils.ext2HasJournal(self.device):
-            ctx.logger.info("Skipping migration of %s, has a journal already." % self.device)
-            return
-
         w = None
         if intf:
             w = intf.progressWindow(_("Migrating %s filesystem on %s") % (self.type, self.device))
@@ -731,6 +726,11 @@ class Ext2Filesystem(Filesystem):
         return msg.strip()
 
     def doMigrate(self, intf=None):
+        # if journal already exists skip
+        if yali.sysutils.ext2HasJournal(self.device):
+            ctx.logger.info("Skipping migration of %s, has a journal already." % self.device)
+            return
+
         Filesystem.doMigrate(self, intf=intf)
         self.tuneFilesystem()
 
