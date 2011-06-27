@@ -163,14 +163,6 @@ class Partition(Device):
                                       start=geometry.start, end=geometry.end)
 
     @property
-    def path(self):
-        """ Device node representing this device. """
-        if not self.parents:
-            return self.name
-
-        return "%s/%s" % (self.parents[0]._devDir, self.name)
-
-    @property
     def partType(self):
         """ Get the partition's type (as parted constant). """
         try:
