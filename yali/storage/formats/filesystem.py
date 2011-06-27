@@ -1010,6 +1010,10 @@ class NTFSFilesystem(Filesystem):
     _minSize = 1
     _maxSize = 16 * 1024 * 1024
 
+    @property
+    def mountable(self):
+        return False
+
     def _fsckFailed(self, rc):
         if rc != 0:
             return True
