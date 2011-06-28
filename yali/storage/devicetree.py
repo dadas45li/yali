@@ -406,6 +406,27 @@ class DeviceTree(object):
                                   "scanning all slaves" % name)
         return device
 
+    def addLogicalVolume(self, info):
+        name = udev_device_get_name(info)
+        log_method_call(self, name=name)
+        uuid = udev_device_get_uuid(info)
+        sysfs_path = udev_device_get_sysfs_path(info)
+
+        # initiate detection of all PVs and hope that it leads to us having
+        # the VG and LVs in the tree
+        for pv_name in os.listdir("/sys" + sysfs_path + "/slaves"):
+            link = os.readlink("/sys" + sysfs_path + "/slaves/" + pv_name)
+            pv_sysfs_path = os.path.normpath(sysfs_path + '/slaves/' + link)
+            pv_info = udev_get_block_device(pv_sysfs_path)
+            self.addDevice(pv_info)
+
+        vg_name = udev_device_get_vg_name(info)
+        device = self.getDeviceByName(vg_name)
+        if not device:
+            ctx.logger.error("failed to find vg '%s' after scanning pvs" % vg_name)
+        return device
+
+
     def addDeviceMapper(self, info):
         name = udev_device_get_name(info)
         uuid = udev_device_get_uuid(info)
@@ -607,6 +628,12 @@ class DeviceTree(object):
 
             if device is None:
                 device = self.addDeviceMapper(info)
+         elif udev_device_is_dm(info) and udev_device_is_dm_mpath(info):
+             ctx.logger.debug("%s is a multipath device" % name)
+            device = self.addDeviceMapper(info)
+        elif udev_device_is_dm_lvm(info):
+            ctx.logger.debug("%s is an lvm logical volume" % name)
+            device = self.addLogicalVolume(info)
         elif udev_device_is_md(info):
             ctx.logger.debug("%s is an md device" % name)
             if uuid:
@@ -1219,6 +1246,11 @@ class DeviceTree(object):
                 # 1) the lvm filter for ignored disks is completely setup
                 # 2) we have checked all devs for duplicate vg names
                 if self.setupLogicalVolumes():
+                    # remove any logical volume devices from old_devices so
+                    # they will be re-scanned to get their formatting handled
+                    for (old_name, old_device) in old_devices.items():
+                        if udev_device_is_dm_lvm(old_device):
+                            del old_devices[old_name]
                     continue
                 # nothing is changing -- we are finished building devices
                 break
