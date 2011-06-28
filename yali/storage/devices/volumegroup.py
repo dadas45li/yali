@@ -242,7 +242,6 @@ class VolumeGroup(DeviceMapper):
             w = intf.progressWindow(_("Creating device %s") % (self.path,))
 
         try:
-            self.createParents()
             self.setupParents()
 
             pv_list = [pv.path for pv in self.parents]

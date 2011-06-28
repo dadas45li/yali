@@ -94,7 +94,6 @@ class FileDevice(Device):
 
         try:
             # this only checks that parents exist
-            self.createParents()
             self.setupParents()
 
             fd = os.open(self.path, os.O_RDWR)

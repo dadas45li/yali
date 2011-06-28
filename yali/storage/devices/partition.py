@@ -372,7 +372,6 @@ class Partition(Device):
 
 
         try:
-            self.createParents()
             self.setupParents()
 
             self.disk.format.addPartition(self.partedPartition)

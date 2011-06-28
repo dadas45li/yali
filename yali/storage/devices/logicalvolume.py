@@ -216,7 +216,6 @@ class LogicalVolume(DeviceMapper):
         if intf:
             w = intf.progressWindow(_("Creating device %s") % (self.path,))
         try:
-            self.createParents()
             self.setupParents()
 
             # should we use --zero for safety's sake?

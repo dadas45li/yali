@@ -308,7 +308,6 @@ class Device(AbstractDevice):
         if self.exists:
             raise DeviceError("device has already been created", self.name)
 
-        self.createParents()
         self.setupParents()
         self.exists = True
         self.setup()

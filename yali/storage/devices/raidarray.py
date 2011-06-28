@@ -404,7 +404,6 @@ class RaidArray(Device):
             w = intf.progressWindow(_("Creating device %s") % (self.path,))
 
         try:
-            self.createParents()
             self.setupParents()
 
             disks = [disk.path for disk in self.devices]

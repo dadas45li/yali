@@ -103,12 +103,6 @@ class AbstractDevice(object):
         """ Close, or tear down, a device. """
         raise NotImplementedError("tearDown method not implemented in AbstactDevice class.")
 
-    def createParents(self):
-        """ Run create method of all parent devices. """
-        for parent in self.parents:
-            if not parent.exists:
-                raise AbstractDeviceError("parent device does not exist", self.name)
-
     def setupParents(self, orig=False):
         """ Open, or set up, a device. """
         for parent in self.parents:

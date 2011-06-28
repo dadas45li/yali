@@ -24,7 +24,6 @@ class DirectoryDevice(FileDevice):
         if self.exists:
             raise DirectoryDeviceError("device already exists", self.name)
 
-        self.createParents()
         self.setupParents()
         try:
             yali.util.mkdirChain(self.path)
