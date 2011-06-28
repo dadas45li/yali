@@ -161,6 +161,15 @@ class Partition(Device):
             disk.setPartitionGeometry(partition=self.partedPartition,
                                       constraint=constraint,
                                       start=geometry.start, end=geometry.end)
+    @property
+    def path(self):
+        if not self.parents:
+            devDir = Device._devDir
+        else:
+            devDir = self.parents[0]._devDir
+
+        return "%s/%s" % (devDir, self.name)
+
 
     @property
     def partType(self):
