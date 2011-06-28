@@ -33,10 +33,6 @@ class NoDevice(Device):
         """ Device node representing this device. """
         return self.name
 
-    def probe(self):
-        """ Probe for any missing information about this device. """
-        pass
-
     def setup(self, intf=None, orig=False):
         """ Open, or set up, a device. """
         pass

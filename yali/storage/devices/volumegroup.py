@@ -87,11 +87,9 @@ class VolumeGroup(DeviceMapper):
         if not self.exists:
             self.pvCount = len(self.parents)
 
-+        # Some snapshots don't have a proper LV as an origin (--vorigin).
-+        # They still occupy space in the VG.
-+        self.voriginSnapshots = {}
-
-        #self.probe()
+        # Some snapshots don't have a proper LV as an origin (--vorigin).
+        # They still occupy space in the VG.
+        self.voriginSnapshots = {}
 
     def __str__(self):
         s = DeviceMapper.__str__(self)
@@ -123,11 +121,6 @@ class VolumeGroup(DeviceMapper):
                   "lv_attr": self.lv_attr,
                   "lvNames": [lv.name for lv in self.lvs]})
         return d
-
-    def probe(self):
-        """ Probe for any information about this device. """
-        if not self.exists:
-            raise VolumeGroupError("device has not been created", self.name)
 
     @property
     def mapName(self):

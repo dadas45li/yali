@@ -40,10 +40,6 @@ class FileDevice(Device):
         Device.__init__(self, path, format=format, size=size,
                         exists=exists, parents=parents)
 
-    def probe(self):
-        """ Probe for any missing information about this device. """
-        pass
-
     @property
     def fstabSpec(self):
         return self.name

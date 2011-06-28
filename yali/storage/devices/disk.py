@@ -70,12 +70,6 @@ class Disk(Device):
         """ The disk's size in MB """
         return super(Disk, self).size
 
-    def probe(self):
-        """ Probe for any missing information about this device.
-
-            pyparted should be able to tell us anything we want to know.
-            size, disklabel type, maybe even partition layout
-        """
     def destroy(self):
         """ Destroy the device. """
         if not self.mediaPresent:

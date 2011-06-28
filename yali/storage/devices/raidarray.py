@@ -218,24 +218,6 @@ class RaidArray(Device):
 
     spares = property(_getSpares, _setSpares)
 
-    def probe(self):
-        """ Probe for any missing information about this device.
-
-            I'd like to avoid paying any attention to "Preferred Minor"
-            as it seems problematic.
-        """
-        if not self.exists:
-            raise RaidArrayError("device has not been created", self.name)
-
-        try:
-            self.devices[0].setup()
-        except Exception:
-            return
-
-        info = raid.mdexamine(self.devices[0].path)
-        if self.level is None:
-            self.level = raid.raidLevel(info['level'])
-
     def updateSysfsPath(self):
         """ Update this device's sysfs path. """
         if not self.exists:
