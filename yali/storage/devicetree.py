@@ -93,8 +93,7 @@ class DeviceTree(object):
                     return False
 
         if udev_device_is_disk(info) and \
-           not udev_device_is_dmraid_partition(info) and \
-           not udev_device_is_multipath_partition(info) and \
+           not udev_device_is_dm_partition(info) and \
            not udev_device_is_dm_lvm(info) and \
            not udev_device_is_dm_crypt(info) and \
            not (udev_device_is_md(info) and
@@ -460,15 +459,10 @@ class DeviceTree(object):
             # try to get the device again now that we've got all the slaves
             device = self.getDeviceByName(name)
 
-            if device is None:
-                if udev_device_is_multipath_partition(info):
-                    diskname = udev_device_get_dm_partition_disk(info)
-                    disk = self.getDeviceByName(diskname)
-                    return self.addPartition(info, disk=disk)
-                elif udev_device_is_dmraid_partition(info):
-                    diskname = udev_device_get_dm_partition_disk(info)
-                    disk = self.getDeviceByName(diskname)
-                    return self.addPartition(info, disk=disk)
+            if device is None and udev_device_is_dm_partition(info):
+                diskname = udev_device_get_dm_partition_disk(info)
+                disk = self.getDeviceByName(diskname)
+                return self.addPartition(info, disk=disk)
 
             # if we get here, we found all of the slave devices and
             # something must be wrong -- if all of the slaves are in
