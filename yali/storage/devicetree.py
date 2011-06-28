@@ -595,10 +595,13 @@ class DeviceTree(object):
         ctx.logger.debug("scanning %s (%s)..." % (name, sysfs_path))
         device = self.getDeviceByName(name)
 
-        if udev_device_is_dm(info):
+        if device:
+            # we successfully looked up the device. skip to format handling.
+            pass
+        elif udev_device_is_dm(info):
             ctx.logger.debug("%s is a device-mapper device" % name)
             # try to look up the device
-            if device is None and uuid:
+            if uuid:
                 # try to find the device by uuid
                 device = self.getDeviceByUUID(uuid)
 
@@ -606,7 +609,7 @@ class DeviceTree(object):
                 device = self.addDeviceMapper(info)
         elif udev_device_is_md(info):
             ctx.logger.debug("%s is an md device" % name)
-            if device is None and uuid:
+            if uuid:
                 # try to find the device by uuid
                 device = self.getDeviceByUUID(uuid)
             if device is None:
@@ -617,19 +620,16 @@ class DeviceTree(object):
                 device = self.addOpticalDevice(info)
         elif udev_device_is_biosraid_member(info) and udev_device_is_disk(info):
             ctx.logger.debug("%s is part of a biosraid" % name)
-            if device is None:
-                device = Disk(name,
-                              major=udev_device_get_major(info),
-                              minor=udev_device_get_minor(info),
-                              sysfsPath=sysfs_path, exists=True)
-                self._addDevice(device)
+            device = Disk(name,
+                          major=udev_device_get_major(info),
+                          minor=udev_device_get_minor(info),
+                          sysfsPath=sysfs_path, exists=True)
+            self._addDevice(device)
         elif udev_device_is_disk(info):
-            if device is None:
-                device = self.addDisk(info)
+            device = self.addDisk(info)
         elif udev_device_is_partition(info):
             ctx.logger.debug("%s is a partition" % name)
-            if device is None:
-                device = self.addPartition(info)
+            device = self.addPartition(info)
         else:
             ctx.logger.error("Unknown block device type for: %s" % name)
             return
