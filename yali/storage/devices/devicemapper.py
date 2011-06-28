@@ -91,6 +91,18 @@ class DeviceMapper(Device):
 
         return devicemapper.dm_node_from_name(self.name)
 
+    def setupPartitions(self):
+        rc = yali.util.run_batch("kpartx", ["-a", "-p", "p", self.path])
+        if rc:
+            raise DeviceMapperError("partition activation failed for '%s'" % self.name)
+        udev_settle()
+
+    def teardownPartitions(self):
+        rc = yali.util.run_batch("kpartx", ["-d", "-p", "p", self.path])
+        if rc:
+            raise DeviceMapperError("partition deactivation failed for '%s'" % self.name)
+        udev_settle()
+
     def _setName(self, name):
         """ Set the device's map name. """
         if self.status:
@@ -100,3 +112,8 @@ class DeviceMapper(Device):
 
     name = property(lambda d: d._name,
                     lambda d,n: d._setName(n))
+
+    @property
+    def slave(self):
+        """ This device's backing device. """
+        return self.parents[0]
