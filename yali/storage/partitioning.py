@@ -1273,7 +1273,7 @@ def growLVM(storage):
                 continue
 
             portion = (lv.req_percent * 0.01)
-            grow = portion * vg.vgFree
+            grow = portion * vg.freeSpace
             new_size = lv.req_size + grow
             if lv.req_max_size and new_size > lv.req_max_size:
                 grow -= (new_size - lv.req_max_size)
@@ -1345,6 +1345,9 @@ def growLVM(storage):
         if vg_free:
             for lv in lvs:
                 if not lv.req_grow:
+                    continue
+
+                if lv.req_percent > 0:
                     continue
 
                 if lv.req_max_size and lv.size == lv.req_max_size:
