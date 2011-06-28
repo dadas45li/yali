@@ -245,7 +245,7 @@ class OperationDestroyDevice(DeviceOperation):
                   and this partition has a lower number
         """
         rc = False
-        if operation.device.dependsOn(self.device):
+        if operation.device.dependsOn(self.device) and operation.isDestroy:
             rc = True
         elif (operation.isDestroy and operation.isDevice and
               isinstance(self.device, Partition) and
