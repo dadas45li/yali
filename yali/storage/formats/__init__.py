@@ -220,31 +220,18 @@ class Format(object):
             raise FormatError("invalid device specification", self.device)
 
     def destroy(self, *args, **kwargs):
-        # zero out the 1MB at the beginning and end of the device in the
-        # hope that it will wipe any metadata from filesystems that
-        # previously occupied this device
-        ctx.logger.debug("zeroing out beginning and end of %s..." % self.device)
-        fd = None
-
         try:
-            fd = os.open(self.device, os.O_RDWR)
-            buf = '\0' * 1024 * 1024
-            os.write(fd, buf)
-            os.lseek(fd, -1024 * 1024, 2)
-            os.write(fd, buf)
-            os.close(fd)
-        except OSError as e:
-            if getattr(e, "errno", None) == 28: # No space left in device
-                pass
-            else:
-                ctx.logger.error("error zeroing out %s: %s" % (self.device, e))
-
-            if fd:
-                os.close(fd)
+            rc = yali.util.run_batch("wipefs", ["-a", self.device])
         except Exception as e:
-            ctx.logger.error("error zeroing out %s: %s" % (self.device, e))
-            if fd:
-                os.close(fd)
+            err = str(e)
+        else:
+            err = ""
+            if rc:
+                err = str(rc)
+
+        if err:
+            msg = "error wiping old signatures from %s: %s" % (self.device, err)
+            raise FormatError(msg)
 
         self.exists = False
 
