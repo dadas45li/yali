@@ -67,52 +67,26 @@ class FileDevice(Device):
 
         return os.path.normpath("%s%s" % (root, self.name))
 
-    def setup(self, intf=None, orig=False):
-        Device.setup(self, orig=orig)
+    def _preSetup(self, orig=False):
         if self.format and self.format.exists and not self.format.status:
             self.format.device = self.path
 
-        for parent in self.parents:
-            if orig:
-                parent.originalFormat.setup()
-            else:
-                parent.format.setup()
+        return Device._preSetup(self, orig=orig)
 
-    def teardown(self, recursive=None):
-        Device.teardown(self)
+    def _preTeardown(self, recursive=None):
         if self.format and self.format.exists and not self.format.status:
             self.format.device = self.path
 
-    def create(self, intf=None):
+        return Device._preTeardown(self, recursive=recursive)
+
+    def _create(self, w):
         """ Create the device. """
-        if self.exists:
-            raise FileDeviceError("device already exists", self.name)
-
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Creating file %s") % (self.path,))
-
-        try:
-            # this only checks that parents exist
-            self.setupParents()
-
-            fd = os.open(self.path, os.O_RDWR)
-            buf = '\0' * 1024 * 1024 * self.size
+        fd = os.open(self.path, os.O_WRONLY|os.O_CREAT|os.O_TRUNC)
+        buf = "\0" * 1024 * 1024
+        for n in range(self.size):
             os.write(fd, buf)
-        except (OSError, TypeError) as e:
-            ctx.logger.error("error writing out %s: %s" % (self.path, e))
-            raise FileDeviceError(e, self.name)
-        else:
-            self.exists = True
-        finally:
-            os.close(fd)
-            if w:
-                w.pop()
+        os.close(fd)
 
-    def destroy(self):
+    def _destroy(self):
         """ Destroy the device. """
-        if not self.exists:
-            raise FileDeviceError("device has not been created", self.name)
-
         os.unlink(self.path)
-        self.exists = False

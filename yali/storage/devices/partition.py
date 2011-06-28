@@ -361,43 +361,26 @@ class Partition(Device):
 
         self._bootable = self.getFlag(parted.PARTITION_BOOT)
 
-    def create(self, intf=None):
+    def _create(self, w):
         """ Create the device. """
-        if self.exists:
-            raise PartitionError("device already exists", self.name)
-
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Creating device %s") % (self.path,))
-
+        self.disk.format.addPartition(self.partedPartition)
 
         try:
-            self.setupParents()
+            self.disk.format.commit()
+        except DiskLabelCommitError:
+            part = self.disk.format.partedDisk.getPartitionByPath(self.path)
+            self.disk.format.removePartition(part)
+            raise
 
-            self.disk.format.addPartition(self.partedPartition)
+    def _postCreate(self):
+        if not self.isExtended:
+            # Ensure old metadata which lived in freespace so did not get
+            # explictly destroyed by a destroyformat action gets wiped
+            Format(device=self.path, exists=True).destroy()
 
-            try:
-                self.disk.format.commit()
-            except DiskLabelCommitError, msg:
-                part = self.disk.format.partedDisk.getPartitionByPath(self.path)
-                self.disk.format.removePartition(part)
-                raise PartitionError, msg
-
-            if not self.isExtended:
-                # Ensure old metadata which lived in freespace so did not get
-                # explictly destroyed by a destroyformat action gets wiped
-                Format(device=self.path, exists=True).destroy()
-        except Exception, msg:
-            raise PartitionError("Create device failed!", self.name)
-        else:
-            self.partedPartition = self.disk.format.partedDisk.getPartitionByPath(self.path)
-
-            self.exists = True
-            self._currentSize = self.partedPartition.getSize()
-            self.setup()
-        finally:
-            if w:
-                w.pop()
+        self.partedPartition = self.disk.format.partedDisk.getPartitionByPath(self.path)
+        Device._postCreate(self)
+        self._currentSize = self.partedPartition.getSize()
 
     def _computeResize(self, partition):
         # compute new size for partition
@@ -435,30 +418,24 @@ class Partition(Device):
             self.disk.format.commit()
             self._currentSize = partition.getSize()
 
-    def destroy(self):
-        """ Destroy the device. """
-        if not self.exists:
-            raise PartitionError("device has not been created", self.name)
-
+    def _preDestroy(self):
+        Device._preDestroy(self)
         if not self.sysfsPath:
             return
 
-        if not self.isleaf:
-            raise PartitionError("Cannot destroy non-leaf device", self.name)
-
         self.setupParents(orig=True)
 
+    def _destroy(self):
+        """ Destroy the device. """
         # we should have already set self.partedPartition to point to the
         # partition on the original disklabel
         self.disk.originalFormat.removePartition(self.partedPartition)
         try:
             self.disk.originalFormat.commit()
-        except DiskLabelCommitError, msg:
+        except DiskLabelCommitError:
             self.disk.originalFormat.addPartition(self.partedPartition)
             self.partedPartition = self.disk.originalFormat.partedDisk.getPartitionByPath(self.path)
-            raise PartitionError, msg
-
-        self.exists = False
+            raise
 
     def teardown(self, recursive=None):
         """ Close, or tear down, a device. """

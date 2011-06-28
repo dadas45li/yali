@@ -17,6 +17,9 @@ from yali.storage.library import devicemapper
 class LogicalVolumeError(DeviceError):
     pass
 
+class SinglePhysicalVolumeError(LogicalVolumeError):
+    pass
+
 class LogicalVolume(DeviceMapper):
     """ An LVM Logical Volume """
     _type = "lvmlv"
@@ -26,7 +29,8 @@ class LogicalVolume(DeviceMapper):
     def __init__(self, name, vgdev, size=None, uuid=None,
                  stripes=1, logSize=0, snapshotSpace=0,
                  format=None, exists=None, sysfsPath='',
-                 grow=None, maxsize=None, percent=None):
+                 grow=None, maxsize=None, percent=None,
+                 singlePV=False):
         """ Create a LogicalVolume instance.
 
             Arguments:
@@ -44,6 +48,7 @@ class LogicalVolume(DeviceMapper):
                 sysfsPath -- sysfs device path
                 format -- a DeviceFormat instance
                 exists -- indicates whether this is an existing device
+                singlePV -- if true, maps this lv to a single pv
 
                 For new (non-existent) LVs only:
 
@@ -67,6 +72,7 @@ class LogicalVolume(DeviceMapper):
         self.snapshotSpace = snapshotSpace
         self.stripes = stripes
         self.logSize = logSize
+        self.singlePV = singlePV
 
         self.req_grow = None
         self.req_max_size = 0
@@ -79,6 +85,13 @@ class LogicalVolume(DeviceMapper):
             # XXX should we enforce that req_size be pe-aligned?
             self.req_size = self._size
             self.req_percent = numeric_type(percent)
+
+        if self.singlePV:
+            # make sure there is at least one PV that can hold this LV
+            validpvs = filter(lambda x: float(x.size) >= self.req_size,
+                              self.vg.pvs)
+            if not validpvs:
+                raise SinglePhysicalVolumeError(self.singlePVerr)
 
         # here we go with the circular references
         self.vg._addLogicalVolume(self)
@@ -164,82 +177,55 @@ class LogicalVolume(DeviceMapper):
         """ Test if vg exits and if it has all pvs. """
         return self.vg.complete
 
-    def setup(self, intf=None, orig=False):
+    def setupParents(self, orig=False):
+        # parent is a vg, which has no formatting (or device for that matter)
+        Device.setupParents(self, orig=orig)
+
+    def _setup(self, intf=None, orig=False):
         """ Open, or set up, a device. """
-        if not self.exists:
-            raise LogicalVolumeError("device has not been created", self.name)
-
-        if self.status:
-            return
-
-        self.vg.setup(orig=orig)
         lvm.lvactivate(self.vg.name, self._name)
 
-        # we always probe since the device may not be set up when we want
-        # information about it
-        self._size = self.currentSize
-
-    def teardown(self, recursive=None):
+    def _teardown(self, recursive=None):
         """ Close, or tear down, a device. """
-        if not self.exists and not recursive:
-            raise LogicalVolumeError("device has not been created", self.name)
+        lvm.lvdeactivate(self.vg.name, self._name)
 
-        if self.status:
-            if self.originalFormat.exists:
-                self.originalFormat.teardown()
-            if self.format.exists:
-                self.format.teardown()
-            udev_settle()
-
-        if self.status:
-            try:
-                lvm.lvdeactivate(self.vg.name, self._name)
-            except lvm.LVMError, msg:
-                ctx.logger.debug("lv %s deactivate failed; continuing" % self._name)
-
-
-        if recursive:
+    def _postTeardown(self, recursive=False):
+        try:
             # It's likely that teardown of a VG will fail due to other
             # LVs being active (filesystems mounted, &c), so don't let
             # it bring everything down.
-            try:
-                self.vg.teardown(recursive=recursive)
-            except Exception as e:
+            Device._postTeardown(self, recursive=recursive)
+        except DeviceError:
+            if recursive:
                 ctx.logger.debug("vg %s teardown failed; continuing" % self.vg.name)
+            else:
+                raise
 
-    def create(self, intf=None):
+    def _create(self, w):
         """ Create the device. """
-        if self.exists:
-            raise LogicalVolumeError("device already exists", self.name)
-
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Creating device %s") % (self.path,))
-        try:
-            self.setupParents()
-
-            # should we use --zero for safety's sake?
-            lvm.lvcreate(self.vg.name, self._name, self.size)
-        except Exception, msg:
-            raise LogicalVolumeError("Create device failed", self._name)
+        # should we use --zero for safety's sake?
+        if self.singlePV:
+            lvm.lvcreate(self.vg.name, self._name, self.size, progress=w,
+                         pvs=self._getSinglePV())
         else:
-            # FIXME set / update self.uuid here
-            self.exists = True
-            self.setup()
-        finally:
-            if w:
-                w.pop()
+            lvm.lvcreate(self.vg.name, self._name, self.size, progress=w)
 
-    def destroy(self):
-        """ Destroy the device. """
-        if not self.exists:
-            raise LogicalVolumeError("device has not been created", self.name)
-
-        self.teardown()
+    def _preDestroy(self):
+        Device._preDestroy(self)
         # set up the vg's pvs so lvm can remove the lv
         self.vg.setupParents(orig=True)
+
+    def _destroy(self):
+        """ Destroy the device. """
         lvm.lvremove(self.vg.name, self._name)
-        self.exists = False
+
+    def _getSinglePV(self):
+        validpvs = filter(lambda x: float(x.size) >= self.size, self.vg.pvs)
+
+        if not validpvs:
+            raise SinglePhysicalVolumeError(self.singlePVerr)
+
+        return [validpvs[0].path]
 
     def resize(self, intf=None):
         # XXX resize format probably, right?

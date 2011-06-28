@@ -39,12 +39,13 @@ class NoDevice(Device):
 
     def teardown(self, recursive=False):
         """ Close, or tear down, a device. """
-        pass
+        # just make sure the format is unmounted
+        self._preTeardown(recursive=recursive)
 
     def create(self, intf=None):
         """ Create the device. """
-        self.setupParents()
+        pass
 
     def destroy(self):
         """ Destroy the device. """
-        pass
+        self._preDestroy()

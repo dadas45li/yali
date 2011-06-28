@@ -319,46 +319,23 @@ class RaidArray(Device):
         """ Return a list of this array's member device instances. """
         return self.parents
 
-    def setup(self, intf=None, orig=False):
+    def _setup(self, intf=None, orig=False):
         """ Open, or set up, a device. """
-        if not self.exists:
-            raise RaidArrayError("device has not been created", self.name)
-
-        if self.status:
-            return
-
         disks = []
         for member in self.devices:
             member.setup(orig=orig)
             disks.append(member.path)
 
-        update_super_minor = True
-        if self.type == "mdcontainer" or self.type == "mdbiosraidarray":
-            update_super_minor = False
-
         raid.mdactivate(self.path,
                           members=disks,
                           super_minor=self.minor,
-                          update_super_minor=update_super_minor,
                           uuid=self.uuid)
-
-        udev_settle()
-
-        # we always probe since the device may not be set up when we want
-        # information about it
-        self._size = self.currentSize
 
     def teardown(self, recursive=None):
         """ Close, or tear down, a device. """
-        if not self.exists and not recursive:
-            raise RaidArrayError("device has not been created", self.name)
-
-        if self.status:
-            if self.originalFormat.exists:
-                self.originalFormat.teardown()
-            if self.format.exists:
-                self.format.teardown()
-            udev_settle()
+        # we don't really care about the return value of _preTeardown here.
+        # see comment just above mddeactivate call
+        self._preTeardown(recursive=recursive)
 
         # Since BIOS RAID sets (containers in raid terminology) never change
         # there is no need to stop them and later restart them. Not stopping
@@ -372,8 +349,7 @@ class RaidArray(Device):
         if self.exists and os.path.exists(self.path):
             raid.mddeactivate(self.path)
 
-        if recursive:
-            self.teardownParents(recursive=recursive)
+        self._postTeardown(recursive=recursive)
 
     def preCommitFixup(self, *args, **kwargs):
         """ Determine create parameters for this set """
@@ -394,41 +370,23 @@ class RaidArray(Device):
         if self.size < 1000 or self.format.type == "swap":
             self.createBitmap = False
 
-    def create(self, intf=None):
+    def _postCreate(self):
+        Device._postCreate(self)
+        info = udev_get_block_device(self.sysfsPath)
+        self.uuid = udev_device_get_md_uuid(info)
+        for member in self.devices:
+            member.mdUuid = self.uuid
+
+    def _create(self, w):
         """ Create the device. """
-        if self.exists:
-            raise RaidArrayError("device already exists", self.name)
-
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Creating device %s") % (self.path,))
-
-        try:
-            self.setupParents()
-
-            disks = [disk.path for disk in self.devices]
-            spares = len(self.devices) - self.memberDevices
-            raid.mdcreate(self.path,
-                            self.level,
-                            disks,
-                            spares,
-                            metadataVer=self.createMetadataVer,
-                            bitmap=self.createBitmap)
-        except Exception, msg:
-            raise RaidArrayError, msg
-        else:
-            self.exists = True
-            # the array is automatically activated upon creation, but...
-            self.setup()
-            udev_settle()
-            self.updateSysfsPath()
-            info = udev_get_block_device(self.sysfsPath)
-            self.uuid = udev_device_get_md_uuid(info)
-            for member in self.devices:
-                member.mdUuid = self.uuid
-        finally:
-            if w:
-                w.pop()
+        disks = [disk.path for disk in self.devices]
+        spares = len(self.devices) - self.memberDevices
+        raid.mdcreate(self.path,
+                        self.level,
+                        disks,
+                        spares,
+                        metadataVer=self.createMetadataVer,
+                        bitmap=self.createBitmap)
 
     @property
     def formatArgs(self):

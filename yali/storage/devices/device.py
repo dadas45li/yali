@@ -192,33 +192,6 @@ class Device(AbstractDevice):
         """
         raise NotImplementedError("resize method not defined for Device")
 
-    def setup(self, intf=None, orig=False):
-        """ Open, or set up, a device. """
-        if not self.exists:
-            raise DeviceError("device has not been created", self.name)
-
-        self.setupParents(orig=orig)
-        for parent in self.parents:
-            if orig:
-                parent.originalFormat.setup()
-            else:
-                parent.format.setup()
-
-    def teardown(self, recursive=None):
-        """ Close, or tear down, a device. """
-        if not self.exists and not recursive:
-            raise DeviceError("device has not been created", self.name)
-
-        if self.status:
-            if self.originalFormat.exists:
-                self.originalFormat.teardown()
-            if self.format.exists:
-                self.format.teardown()
-            yali.baseudev.udev_settle()
-
-        if recursive:
-            self.teardownParents(recursive=recursive)
-
     def _getSize(self):
         """ Get the device's size in MB, accounting for pending changes. """
         if self.exists and not self.mediaPresent:
@@ -303,24 +276,155 @@ class Device(AbstractDevice):
         """ Do any necessary pre-commit fixups."""
         pass
 
-    def create(self, intf=None):
-        """ Create the device. """
+    #
+    # setup
+    #
+    def _preSetup(self, orig=False):
+        """ Preparation and pre-condition checking for device setup.
+
+            Return True if setup should proceed or False if not.
+        """
+        if not self.exists:
+            raise DeviceError("device has not been created", self.name)
+
+        if self.status or not self.controllable:
+            return False
+
+        self.setupParents(orig=orig)
+        return True
+
+    def _setup(self, intf=None, orig=False):
+        """ Perform device-specific setup operations. """
+        pass
+
+    def setup(self, intf=None, orig=False):
+        """ Open, or set up, a device. """
+        if not self._preSetup(orig=orig):
+            return
+
+        self._setup(intf=intf, orig=orig)
+        self._postSetup()
+
+    def _postSetup(self):
+        """ Perform post-setup operations. """
+        udev_settle()
+        # we always probe since the device may not be set up when we want
+        # information about it
+        self._size = self.currentSize
+
+    #
+    # teardown
+    #
+    def _preTeardown(self, recursive=None):
+        """ Preparation and pre-condition checking for device teardown.
+
+            Return True if teardown should proceed or False if not.
+        """
+        if not self.exists and not recursive:
+            raise DeviceError("device has not been created", self.name)
+
+        if not self.status or not self.controllable:
+            return False
+
+        if self.originalFormat.exists:
+            self.originalFormat.teardown()
+        self.format.cacheMajorminor()
+        if self.format.exists:
+            self.format.teardown()
+        udev_settle()
+        return True
+
+    def _teardown(self, recursive=None):
+        """ Perform device-specific teardown operations. """
+        pass
+
+    def teardown(self, recursive=None):
+        """ Close, or tear down, a device. """
+        if not self._preTeardown(recursive=recursive):
+            return
+
+        self._teardown(recursive=recursive)
+        self._postTeardown(recursive=recursive)
+
+    def _postTeardown(self, recursive=None):
+        """ Perform post-teardown operations. """
+        if recursive:
+            self.teardownParents(recursive=recursive)
+
+    #
+    # create
+    #
+    def _preCreate(self):
+        """ Preparation and pre-condition checking for device creation. """
         if self.exists:
             raise DeviceError("device has already been created", self.name)
 
         self.setupParents()
+
+    def _create(self, w):
+        """ Perform device-specific create operations. """
+        pass
+
+    def create(self, intf=None):
+        """ Create the device. """
+        self._preCreate()
+        w = intf.progressWindow(_("Creating device %s") % self.path)
+        try:
+            self._create(w)
+        except Exception as e:
+            raise DeviceError(str(e), self.name)
+        else:
+            self._postCreate()
+        finally:
+            if w:
+                w.pop()
+
+    def _postCreate(self):
+        """ Perform post-create operations. """
         self.exists = True
         self.setup()
+        self.updateSysfsPath()
+        udev_settle()
 
-    def destroy(self):
-        """ Destroy the device. """
+    #
+    # destroy
+    #
+    def _preDestroy(self):
+        """ Preparation and precondition checking for device destruction. """
         if not self.exists:
             raise DeviceError("device has not been created", self.name)
 
         if not self.isleaf:
             raise DeviceError("Cannot destroy non-leaf device", self.name)
 
+        self.teardown()
+
+    def _destroy(self):
+        """ Perform device-specific destruction operations. """
+        pass
+
+    def destroy(self):
+        """ Destroy the device. """
+        self._preDestroy()
+        self._destroy()
+        self._postDestroy()
+
+    def _postDestroy(self):
+        """ Perform post-destruction operations. """
         self.exists = False
+
+    def setupParents(self, orig=False):
+        """ Run setup method of all parent devices. """
+        for parent in self.parents:
+            parent.setup(orig=orig)
+            if orig:
+                _format = parent.originalFormat
+            else:
+                _format = parent.format
+
+            # set up the formatting, if present
+            if _format.type and _format.exists:
+                _format.setup()
 
     @property
     def removable(self):

@@ -6,7 +6,9 @@ import gettext
 __trans = gettext.translation('yali', fallback=True)
 _ = __trans.ugettext
 
-from device import Device, DeviceError
+import yali.util
+from yali.baseudev import udev_settle
+from yali.stoarage.devices.device import Device, DeviceError
 from yali.storage.library import devicemapper
 
 class DeviceMapperError(DeviceError):

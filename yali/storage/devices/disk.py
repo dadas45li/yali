@@ -70,15 +70,9 @@ class Disk(Device):
         """ The disk's size in MB """
         return super(Disk, self).size
 
-    def destroy(self):
+    def _preDestroy(self):
         """ Destroy the device. """
         if not self.mediaPresent:
             raise DiskError("cannot destroy disk with no media", self.name)
 
-        self.teardown()
-
-    def setup(self, intf=None, orig=False):
-        """ Open, or set up, a device. """
-        if not os.path.exists(self.path):
-            raise DiskError("device does not exist", self.name)
-
+        Device._preDestroy(self)

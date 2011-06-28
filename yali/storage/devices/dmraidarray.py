@@ -94,15 +94,14 @@ class DMRaidArray(DeviceMapper):
         self._raidSet.activate(mknod=True)
         udev_settle()
 
-    def setup(self, intf=None, orig=False):
+    def _setup(self, intf=None, orig=False):
         """ Open, or set up, a device. """
-        Device.setup(self, intf=None, orig=orig)
         self.activate()
 
     def teardown(self, recursive=None):
         """ Close, or tear down, a device. """
-        if not self.exists and not recursive:
-            raise DMRaidArrayError("device has not been created", self.name)
+        if not self._preTeardown(recursive=recursive):
+            return
 
         ctx.logger.debug("not tearing down dmraid device %s" % self.name)
 

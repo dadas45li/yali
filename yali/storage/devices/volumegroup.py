@@ -9,10 +9,10 @@ _ = __trans.ugettext
 
 import yali.context as ctx
 from yali.util import numeric_type
-from devicemapper import DeviceMapper
-from device import DeviceError
 from yali.storage.library import lvm
 from yali.storage.formats import get_device_format
+from dyali.storage.devices.devicemapper import DeviceMapper
+from yali.storage.devices.device import Device, DeviceError
 
 class VolumeGroupError(DeviceError):
     pass
@@ -204,74 +204,30 @@ class VolumeGroup(DeviceMapper):
 
         device.removeChild()
 
-    def setup(self, intf=None, orig=False):
-        """ Open, or set up, a device.
+    def _preSetup(self, orig=False):
+        if self.exists and not self.complete:
+            raise VolumeGroupError("cannot activate VG with missing PV(s)", self.name)
+        return Device._preSetup(self, orig=orig)
 
-            XXX we don't do anything like "vgchange -ay" because we don't
-                want all of the LVs activated, just the VG itself.
-        """
-        if not self.exists:
-            raise VolumeGroupError(_("device has not been created"), self.name)
-
-        if self.status:
-            return
-
-        if not self.complete:
-            raise VolumeGroupError(_("cannot activate VG with missing PV(s)"), self.name)
-
-        self.setupParents(orig=orig)
-
-    def teardown(self, recursive=None):
+    def _teardown(self, recursive=None):
         """ Close, or tear down, a device. """
-        if not self.exists and not recursive:
-            raise VolumeGroupError("device has not been created", self.name)
+        lvm.vgdeactivate(self.name)
 
-        if self.status:
-            lvm.vgdeactivate(self.name)
-
-        if recursive:
-            self.teardownParents(recursive=recursive)
-
-    def create(self, intf=None):
+    def _create(self, w):
         """ Create the device. """
-        if self.exists:
-            raise VolumeGroupError("device already exists", self.name)
+        pv_list = [pv.path for pv in self.parents]
+        lvm.vgcreate(self.name, pv_list, self.peSize, progress=w)
 
-        w = None
-        if intf:
-            w = intf.progressWindow(_("Creating device %s") % (self.path,))
-
-        try:
-            self.setupParents()
-
-            pv_list = [pv.path for pv in self.parents]
-            lvm.vgcreate(self.name, pv_list, self.peSize)
-        except Exception, msg:
-            raise VolumeGroupError, msg
-        else:
-            # FIXME set / update self.uuid here
-            self.exists = True
-            self.setup()
-        finally:
-            if w:
-                w.pop()
-
-    def destroy(self):
-        """ Destroy the device. """
-        if not self.exists:
-            raise VolumeGroupError("device has not been created", self.name)
-
+    def _preDestroy(self):
+        Device._preDestroy(self)
         # set up the pvs since lvm needs access to them to do the vgremove
         self.setupParents(orig=True)
 
-        # this sometimes fails for some reason.
-        try:
-            lvm.vgreduce(self.name, [], rm=True)
-            lvm.vgremove(self.name)
-        except lvm.LVMError:
-            raise VolumeGroupError("Could not completely remove VG", self.name)
-        finally:
-            self.exists = False
+    def _destroy(self):
+        """ Destroy the device. """
+        lvm.vgreduce(self.name, [], rm=True)
+        lvm.vgdeactivate(self.name)
+        lvm.vgremove(self.name)
 
     def reduce(self, pv_list):
         """ Remove the listed PVs from the VG. """
