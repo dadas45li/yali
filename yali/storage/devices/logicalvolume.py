@@ -137,7 +137,9 @@ class LogicalVolume(DeviceMapper):
 
     @property
     def vgSpaceUsed(self):
-        return self.size * self.stripes + self.logSize + self.snapshotSpace
+        """ Space occupied by this LV, not including snapshots. """
+        return (self.vg.align(self.size, roundup=True) * self.stripes
+                + self.logSize)
 
     @property
     def vg(self):
