@@ -675,6 +675,9 @@ class Filesystem(Format):
             return False
         return self._mountpoint is not None
 
+    def sync(self, root="/"):
+        pass
+
 class Ext2Filesystem(Filesystem):
     """ ext2 filesystem. """
     _type = "ext2"
@@ -974,6 +977,25 @@ class XFilesystem(Filesystem):
     _existingSizeFields = ["dblocks =", "blocksize ="]
     partedSystem = fileSystemType["xfs"]
     _maxSize = 16 * 1024 * 1024
+
+    def sync(self, root='/'):
+        """ Ensure that data we've written is at least in the journal.
+
+            This is a little odd because xfs_freeze will only be
+            available under the install root.
+        """
+        if not self.status or not self._mountpoint.startswith(root):
+            return
+
+        try:
+            yali.util.run_batch("xfs_freeze", ["-f", self.mountpoint])
+        except (RuntimeError, OSError) as e:
+            ctx.logger.error("failed to run xfs_freeze: %s" % e)
+
+        try:
+            yali.util.run_batch("xfs_freeze", ["-u", self.mountpoint])
+        except (RuntimeError, OSError) as e:
+            ctx.logger.error("failed to run xfs_freeze: %s" % e)
 
 register_device_format(XFilesystem)
 
