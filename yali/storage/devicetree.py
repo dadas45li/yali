@@ -1210,6 +1210,18 @@ class DeviceTree(object):
 
         questionUnusedRaidMembers(ctx.interface, self.unusedRaidMembers)
 
+        # remove md array devices for which we did not find all members
+        for array in self.getDevicesByType("mdarray"):
+            if array.memberDevices > len(array.parents):
+                self._recursiveRemove(array)
+
+    def _recursiveRemove(self, device):
+        for d in self.getChildren(device):
+            self._recursiveRemove(d)
+
+        device.teardown()
+        self._removeDevice(device)
+
     def getDependentDevices(self, dep):
         """Return list of devices that depend on.
 
