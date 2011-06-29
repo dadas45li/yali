@@ -623,13 +623,7 @@ class DeviceTree(object):
             pass
         elif udev_device_is_dm(info):
             ctx.logger.debug("%s is a device-mapper device" % name)
-            # try to look up the device
-            if uuid:
-                # try to find the device by uuid
-                device = self.getDeviceByUUID(uuid)
-
-            if device is None:
-                device = self.addDeviceMapper(info)
+            device = self.addDeviceMapper(info)
          elif udev_device_is_dm(info) and udev_device_is_dm_mpath(info):
              ctx.logger.debug("%s is a multipath device" % name)
             device = self.addDeviceMapper(info)
