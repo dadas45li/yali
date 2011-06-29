@@ -244,9 +244,7 @@ class VolumeGroup(DeviceMapper):
 
         # verify we have the space, then add it
         # do not verify for growing vg (because of ks)
-        if not lv.exists and \
-           not [pv for pv in self.pvs if getattr(pv, "req_grow", None)] and \
-           lv.size > self.freeSpace:
+        if not lv.exists and not self.growable and lv.size > self.freeSpace:
             raise VolumeGroupError("new lv is too large to fit in free space", self.name)
 
         ctx.logger.debug("Adding %s/%dMB to %s" % (lv.name, lv.size, self.name))

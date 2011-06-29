@@ -459,3 +459,13 @@ class Device(AbstractDevice):
         if not self._model:
             self._model = getattr(self.partedDevice, "model", "")
         return self._model
+    @property
+    def growable(self):
+        """ True if this device or it's component devices are growable. """
+        grow = getattr(self, "req_grow", False)
+        if not grow:
+            for parent in self.parents:
+                grow = parent.growable
+                if grow:
+                    break
+        return grow
