@@ -630,7 +630,7 @@ class DeviceTree(object):
         elif udev_device_is_dm_lvm(info):
             ctx.logger.debug("%s is an lvm logical volume" % name)
             device = self.addLogicalVolume(info)
-        elif udev_device_is_md(info):
+        elif udev_device_is_md(info) and not udev_device_get_md_container(info):
             ctx.logger.debug("%s is an md device" % name)
             if uuid:
                 # try to find the device by uuid
