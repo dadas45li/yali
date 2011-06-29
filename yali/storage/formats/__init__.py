@@ -11,6 +11,7 @@ import yali.util
 import yali.context as ctx
 from yali.storage import StorageError
 from yali.storage.library import devicemapper
+from yali.storage.udev import udev_device_get_minor
 device_formats = {}
 
 def getFormat(type, *args, **kwargs):
@@ -137,6 +138,7 @@ class Format(object):
         self.uuid = kwargs.get("uuid")
         self.exists = kwargs.get("exists")
         self.options = kwargs.get("options")
+        self._majorminor = None
         self._migrate = False
 
     def __str__(self):
@@ -209,6 +211,24 @@ class Format(object):
         except Exception, e:
             ctx.logger.warning("failed to notify kernel of change: %s" % e)
 
+    def cacheMajorminor(self):
+        """ Cache the value of self.majorminor.
+
+            Once a device node of this format's device disappears (for instance
+            after a teardown), it is no longer possible to figure out the value
+            of self.majorminor pseudo-unique string. Call this method before
+            that happens for caching this.
+        """
+        self._majorminor = None
+        try:
+            self.majorminor # this does the caching
+        except FormatError:
+            # entirely possible there's no majorminor, for instance an
+            # VolumeGroup has got no device node and no sysfs path.  In this
+            # case obviously, calling majorminor of this object later raises an
+            # exception.
+            pass
+        return self._majorminor
 
     def create(self, *args, **kwargs):
         # allow late specification of device path
@@ -324,5 +344,26 @@ class Format(object):
     def hidden(self):
         """ Whether devices with this formatting should be hidden in UIs. """
         return self._hidden
+
+    def majorminor(self):
+        """A string suitable for using as a pseudo-unique ID in kickstart."""
+        if not self._majorminor:
+            # If this is a device-mapper device, we have to get the DM node and
+            # build the sysfs path from that.
+            try:
+                device = devicemapper.dm_node_from_name(os.path.basename(self.device))
+            except DeviceMapperError:
+                device = self.device
+
+            try:
+                sysfs_path = yali.util.get_sysfs_path_by_name(device)
+            except RuntimeError:
+                raise FormatError("DeviceFormat.majorminor: "
+                                   "can not get majorminor for '%s'" % device)
+            dev = udev_get_device(sysfs_path[4:])
+
+            self._majorminor = "%03d%03d" %\
+                (udev_device_get_major(dev), udev_device_get_minor(dev))
+        return self._majorminor
 
 collect_device_formats()
