@@ -611,6 +611,8 @@ class DeviceTree(object):
 
         if self.isIgnored(info):
             ctx.logger.debug("ignoring %s (%s)" % (name, sysfs_path))
+            if name not in self._ignoredDisks:
+                self.addIgnoredDisk(name)
             return
 
         ctx.logger.debug("scanning %s (%s)..." % (name, sysfs_path))
