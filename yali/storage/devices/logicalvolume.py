@@ -67,6 +67,14 @@ class LogicalVolume(DeviceMapper):
 
         DeviceMapper.__init__(self, name, size=size, format=format,
                               sysfsPath=sysfsPath, parents=vgdev, exists=exists)
+        self.singlePVerr = ("%(mountpoint)s is restricted to a single "
+                            "physical volume on this platform.  No physical "
+                            "volumes available in volume group %(vgname)s "
+                            "with %(size)d MB of available space." %
+                           {'mountpoint': getattr(self.format, "mountpoint",
+                                                  "A proposed logical volume"),
+                            'vgname': self.vg.name,
+                            'size': self.size})
 
         self.uuid = uuid
         self.snapshotSpace = snapshotSpace
