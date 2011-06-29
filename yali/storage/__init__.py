@@ -934,3 +934,13 @@ class Storage(object):
                 return False
 
         return True
+
+    def mustFormat(self, device):
+        """ Return a string explaining why the device must be reformatted.
+
+            Return None if the device need not be reformatted.
+        """
+        if device.format.mountable and device.format.mountpoint == "/":
+            return _("You must create a new filesystem on the root device.")
+
+        return None
