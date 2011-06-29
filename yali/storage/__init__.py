@@ -885,6 +885,19 @@ class Storage(object):
                                   "lower than recommended for a normal %(productName)s install.")
                                 % {'mount': mount, 'size': size, 'productName': yali.util.product_name()})
 
+        for (mount, device) in filesystems.items():
+            problem = filesystems[mount].checkSize()
+            if problem < 0:
+                errors.append(_("Your %(mount)s partition is too small for %(format)s formatting "
+                                "(allowable size is %(minSize)d MB to %(maxSize)d MB)")
+                              % {"mount": mount, "format": device.format.name,
+                                 "minSize": device.minSize, "maxSize": device.maxSize})
+            elif problem > 0:
+                errors.append(_("Your %(mount)s partition is too large for %(format)s formatting "
+                                "(allowable size is %(minSize)d MB to %(maxSize)d MB)")
+                              % {"mount":mount, "format": device.format.name,
+                                 "minSize": device.minSize, "maxSize": device.maxSize})
+
 
         errors.extend(self.storageset.checkBootRequest(boot))
 

@@ -244,3 +244,21 @@ class LogicalVolume(DeviceMapper):
 
         udev_settle()
         lvm.lvresize(self.vg.name, self._name, self.size)
+
+    def checkSize(self):
+        """ Check to make sure the size of the device is allowed by the
+            format used.
+
+            return None is all is ok
+            return large or small depending on the problem
+        """
+        problem = None
+        if self.format.maxSize and self.size > self.format.maxSize:
+            problem = _("large")
+        elif (self.format.minSize and
+              (not self.req_grow and
+               self.size < self.format.minSize) or
+              (self.req_grow and self.req_max_size and
+               self.req_max_size < self.format.minSize)):
+            problem = _("small")
+        return problem

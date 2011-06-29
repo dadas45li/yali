@@ -469,3 +469,17 @@ class Device(AbstractDevice):
                 if grow:
                     break
         return grow
+
+    def checkSize(self):
+        """ Check to make sure the size of the device is allowed by the
+            format used.
+
+            return None is all is ok
+            return large or small depending on the problem
+        """
+        problem = None
+        if self.format.maxSize and self.size > self.format.maxSize:
+            problem = _("large")
+        elif self.format.minSize and self.size < self.format.minSize:
+            problem = _("small")
+        return problem
