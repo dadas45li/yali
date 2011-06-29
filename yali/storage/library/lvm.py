@@ -245,7 +245,7 @@ def vgreduce(vg_name, pv_list, rm=False):
     """
     args = ["vgreduce"]
     if rm:
-        args.extend(["--removemissing", vg_name])
+        args.extend(["--removemissing", "--force", vg_name])
     else:
         args.extend([vg_name] + pv_list)
 
