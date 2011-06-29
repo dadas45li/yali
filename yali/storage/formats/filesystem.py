@@ -732,7 +732,6 @@ class Ext2Filesystem(Filesystem):
             return
 
         Filesystem.doMigrate(self, intf=intf)
-        self.tuneFilesystem()
 
     def _getFormatOptions(self, options=None):
         argv = []
@@ -752,19 +751,6 @@ class Ext2Filesystem(Filesystem):
 
     def doFormat(self, *args, **kwargs):
         Filesystem.doFormat(self, *args, **kwargs)
-        self.tuneFilesystem()
-
-    def tuneFilesystem(self):
-        if not yali.sysutils.ext2HasJournal(self.device):
-            # only do this if there's a journal
-            return
-
-        try:
-            rc = yali.util.run_batch("tune2fs", ["-c0", "-i0","-ouser_xattr,acl", self.device])[0]
-        except Exception as e:
-            ctx.logger.error("failed to run tune2fs on %s: %s" % (self.device, e))
-        else:
-            return rc
 
     @property
     def minSize(self):
