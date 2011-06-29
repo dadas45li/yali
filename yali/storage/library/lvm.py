@@ -305,11 +305,11 @@ def lvorigin(vg_name, lv_name):
 
     return origin
 
-def lvcreate(vg_name, lv_name, size):
+def lvcreate(vg_name, lv_name, size, pvs=[]):
     args = ["lvcreate"] + \
             ["-L", "%dm" % size] + \
             ["-n", lv_name] + \
-            [vg_name]
+            [vg_name] + pvs
 
     try:
         lvm(args)

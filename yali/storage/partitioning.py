@@ -233,7 +233,7 @@ class Chunk(object):
 
 class PartitionSpec(object):
     def __init__(self, mountpoint=None, fstype=None, size=None, maxSize=None,
-                 grow=False, asVol=False, weight=0, requiredSpace=0):
+                 grow=False, asVol=False, singlePV=False, weight=0, requiredSpace=0):
         """ Create a new storage specification.  These are used to specify
             the default partitioning layout as an object before we have the
             storage system up and running.  The attributes are obvious
@@ -241,6 +241,8 @@ class PartitionSpec(object):
 
             asVol -- Should this be allocated as a logical volume?  If not,
                      it will be allocated as a partition.
+            singlePV -- Should this logical volume map to a single physical
+                        volume in the volume group?  Implies asVol=True
             weight -- An integer that modifies the sort algorithm for partition
                       requests.  A larger value means the partition will end up
                       closer to the front of the disk.  This is mainly used to
@@ -262,17 +264,22 @@ class PartitionSpec(object):
         self.maxSize = maxSize
         self.grow = grow
         self.asVol = asVol
+        self.singlePV = singlePV
         self.weight = weight
         self.requiredSpace = requiredSpace
 
+        if self.singlePV and not self.asVol:
+            self.asVol = True
+
     def __str__(self):
         s = ("%(type)s instance (%(id)s) -- \n"
-             "  mountpoint = %(mountpoint)s  asVol = %(asVol)s\n"
++             "  mountpoint = %(mountpoint)s  asVol = %(asVol)s  singlePV = %(singlePV)s\n"
              "  weight = %(weight)s  fstype = %(fstype)s\n"
              "  size = %(size)s  maxSize = %(maxSize)s  grow = %(grow)s\n" %
              {"type": self.__class__.__name__, "id": "%#x" % id(self),
               "mountpoint": self.mountpoint, "asVol": self.asVol,
-              "weight": self.weight, "fstype": self.fstype, "size": self.size,
+              "singlePV": self.singlePV, "weight": self.weight,
+              "fstype": self.fstype, "size": self.size,
               "maxSize": self.maxSize, "grow": self.grow})
 
         return s
@@ -1627,7 +1634,8 @@ def _scheduleLogicalVolumes(storage, devices):
                                           mountpoint=request.mountpoint,
                                           grow=request.grow,
                                           maxsize=request.maxSize,
-                                          size=request.size)
+                                          size=request.size,
+                                          singlePV=request.singlePV)
 
         # schedule the device for creation
         storage.createDevice(device)

@@ -5,6 +5,7 @@ from parted import partitionFlag, PARTITION_LBA
 import yali.baseudev
 from devices.device import Device
 from devices.partition import Partition
+from devices.logicalvolume import LogicalVolume
 from formats import getFormat
 from udev import udev_get_block_device, udev_device_get_uuid
 
@@ -213,6 +214,12 @@ class OperationCreateDevice(DeviceOperation):
             otherNum = operation.device.partedPartition.number
             if selfNum > otherNum:
                 rc = True
+        elif (operation.isCreate and operation.isDevice and
+              isinstance(self.device, LogicalVolume) and
+              isinstance(operation.device, LogicalVolume) and
+              self.device.vg == operation.device.vg and
+              operation.device.singlePV and not self.device.singlePV):
+            rc = True
         return rc
 
 
