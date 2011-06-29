@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 import block
-import yali.util
 import yali.context as ctx
 from yali.storage.library import  LibraryError
 
@@ -10,30 +9,32 @@ class DeviceMapperError(LibraryError):
     pass
 
 def name_from_dm_node(dm_node):
-    name = block.getNameFromDmNode(dm_node)
-    if name is not None:
-        return name
+    # first, try sysfs
+    name_file = "/sys/class/block/%s/dm/name" % dm_node
+    try:
+        name = open(name_file).read().strip()
+    except IOError:
+        # next, try pyblock
+        name = block.getNameFromDmNode(dm_node)
 
-    st = os.stat("/dev/%s" % dm_node)
-    major = os.major(st.st_rdev)
-    minor = os.minor(st.st_rdev)
-    name = yali.util.run_batch("dmsetup", ["info", "--columns",
-                               "--noheadings", "-o", "name",
-                               "-j", str(major), "-m", str(minor)])[1]
-    ctx.logger.debug("name_from_dm(%s) returning '%s'" % (dm_node, name.strip()))
-    return name.strip()
+    return name
 
 def dm_node_from_name(name):
-    dm_node = block.getDmNodeFromName(name)
-    if dm_node is not None:
-        return dm_node
+    named_path = "/dev/mapper/%s" % map_name
+    try:
+        # /dev/mapper/ nodes are usually symlinks to /dev/dm-N
+        node = os.path.basename(os.readlink(named_path))
+    except OSError:
+        try:
+            # dm devices' names are based on the block device minor
+            st = os.stat(named_path)
+            minor = os.minor(st.st_rdev)
+            node = "dm-%d" % minor
+        except OSError:
+            # try pyblock
+            node = block.getDmNodeFromName(map_name)
 
-    devnum = yali.util.run_batch("dmsetup", ["info", "--columns",
-                        "--noheadings", "-o", "devno",name])[1]
-    (major, sep, minor) = devnum.strip().partition(":")
-    if not sep:
-        raise DeviceMapperError("dm device does not exist")
+    if not node:
+        raise DeviceMapperError("dm_node_from_name(%s) has failed." % node)
 
-    dm_node = "dm-%d" % int(minor)
-    ctx.logger.debug("dm_node_from_name(%s) returning '%s'" % (name, dm_node))
-    return dm_node
+    return node
