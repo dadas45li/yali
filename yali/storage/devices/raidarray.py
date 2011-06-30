@@ -54,6 +54,9 @@ class RaidArray(Device):
         elif level is not None:
             self.level = raid.raidLevel(level)
 
+        if self.growable and self.level != 0:
+            raise ValueError("Only RAID0 arrays can contain growable members")
+
         # For new arrays check if we have enough members
         if (not exists and parents and
                 len(parents) < raid.get_raid_min_members(self.level)):
