@@ -711,6 +711,8 @@ def addPartition(disk, free, part_type, size):
     if not disk.endAlignment.isAligned(free, end):
         end = disk.endAlignment.alignNearest(free, end)
         ctx.logger.debug("adjusted length from %d to %d" % (length, end - start + 1))
+        if start > end:
+            raise PartitioningError("unable to allocate aligned partition")
 
     newGeom = parted.Geometry(device=disk.partedDevice, start=start, end=end)
 
