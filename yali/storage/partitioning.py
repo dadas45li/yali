@@ -1411,20 +1411,23 @@ def hasFreeDiskSpace(storage, exclusiveDisks=None):
        the disks.  False otherwise.
 
     """
-    freeSpaces = False
-
+    hasFreeSpace = False
     disks = storage.partitioned
-    # also include unpartitioned disks that aren't mpath or biosraid
-    whole = filter(lambda d: not d.partitioned and not d.format.hidden, storage.disks)
-    disks.extend(whole)
-    disks.sort(key=lambda d: d.name)
+
+    if exclusiveDisks:
+        disks = [d for d in disks if d.name in exclusiveDisks]
+
     for disk in disks:
-        for partition in disk.format.freePartitions:
-            if partition.getSize(unit="MB") > 1:
-                freeSpaces = True
+        if storage.clearPartDisks and \
+           (disk.name not in storage.clearPartDisks):
+            continue
+
+        for part in disk.format.partedDisk.getFreeSpacePartitions():
+            if part.getSize(unit="MB") >= 100:
+                hasFreeSpace = True
                 break
 
-    return freeSpaces
+    return hasFreeSpace
 
 def shouldClear(device, clearPartType, clearPartDisks=None):
     if clearPartType not in [CLEARPART_TYPE_LINUX, CLEARPART_TYPE_ALL]:
