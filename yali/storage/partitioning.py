@@ -444,6 +444,63 @@ class VolumeGroupChunk(Chunk):
 
         super(VolumeGroupChunk, self).growRequests()
 
+class PartitionSpec(object):
+    def __init__(self, mountpoint=None, fstype=None, size=None, maxSize=None,
+                 grow=False, asVol=False, singlePV=False, weight=0,
+                 requiredSpace=0, encrypted=False):
+        """ Create a new storage specification.  These are used to specify
+            the default partitioning layout as an object before we have the
+            storage system up and running.  The attributes are obvious
+            except for the following:
+
+            asVol -- Should this be allocated as a logical volume?  If not,
+                     it will be allocated as a partition.
+            singlePV -- Should this logical volume map to a single physical
+                        volume in the volume group?  Implies asVol=True
+            weight -- An integer that modifies the sort algorithm for partition
+                      requests.  A larger value means the partition will end up
+                      closer to the front of the disk.  This is mainly used to
+                      make sure /boot ends up in front, and any special (PReP,
+                      appleboot, etc.) partitions end up in front of /boot.
+                      This value means nothing if asVol=False.
+            requiredSpace -- This value is only taken into account if
+                             asVol=True, and specifies the size in MB that the
+                             containing VG must be for this PartSpec to even
+                             get used.  The VG's size is calculated before any
+                             other LVs are created inside it.  If not enough
+                             space exists, this PartSpec will never get turned
+                             into an LV.
+            encrypted -- Should this request be encrypted? For logical volume
+                         requests, this is satisfied if the PVs are encrypted
+                         as in the case of encrypted LVM autopart.
+        """
+
+        self.mountpoint = mountpoint
+        self.fstype = fstype
+        self.size = size
+        self.maxSize = maxSize
+        self.grow = grow
+        self.asVol = asVol
+        self.singlePV = singlePV
+        self.weight = weight
+        self.requiredSpace = requiredSpace
+        self.encrypted = encrypted
+
+        if self.singlePV and not self.asVol:
+            self.asVol = True
+
+    def __str__(self):
+        s = ("%(type)s instance (%(id)s) -- \n"
+             "  mountpoint = %(mountpoint)s  asVol = %(asVol)s  singlePV = %(singlePV)s\n"
+             "  weight = %(weight)s  fstype = %(fstype)s  encrypted = %(enc)s\n"
+             "  size = %(size)s  maxSize = %(maxSize)s  grow = %(grow)s\n" %
+             {"type": self.__class__.__name__, "id": "%#x" % id(self),
+              "mountpoint": self.mountpoint, "asVol": self.asVol,
+              "singlePV": self.singlePV, "weight": self.weight,
+              "fstype": self.fstype, "size": self.size, "enc": self.encrypted,
+              "maxSize": self.maxSize, "grow": self.grow})
+
+        return s
 
 def sectorsToSize(sectors, sectorSize):
     """ Convert length in sectors to size in MB.
@@ -1399,6 +1456,38 @@ def growPartitions(disks, partitions, free):
                     # make sure we store the disk's version of the partition
                     newpart = disklabel.partedDisk.getPartitionByPath(path)
                     device.partedPartition = newpart
+
+def lvCompare(lv1, lv2):
+    """ More specifically defined lvs come first.
+
+        < 1 => x < y
+          0 => x == y
+        > 1 => x > y
+    """
+    ret = 0
+
+    # larger requests go to the front of the list
+    ret -= cmp(lv1.size, lv2.size) * 100
+
+    # fixed size requests to the front
+    ret += cmp(lv1.req_grow, lv2.req_grow) * 50
+
+    # potentially larger growable requests go to the front
+    if lv1.req_grow and lv2.req_grow:
+        if not lv1.req_max_size and lv2.req_max_size:
+            ret -= 25
+        elif lv1.req_max_size and not lv2.req_max_size:
+            ret += 25
+        else:
+            ret -= cmp(lv1.req_max_size, lv2.req_max_size) * 25
+
+    if ret > 0:
+        ret = 1
+    elif ret < 0:
+        ret = -1
+
+    return ret
+
 def growLVM(storage):
     """ Grow LVs according to the sizes of the PVs. """
     for vg in storage.vgs:
