@@ -135,11 +135,11 @@ class LogicalVolume(DeviceMapper):
     def _setSize(self, size):
         size = self.vg.align(numeric_type(size))
         ctx.logger.debug("trying to set lv %s size to %dMB" % (self.name, size))
-        if size <= (self.vg.freeSpace + self._size):
+        if size <= self.vg.freeSpace + self.vgSpaceUsed:
             self._size = size
             self.targetSize = size
         else:
-            ctx.logger.debug("failed to set size: %dMB short" % (size - (self.vg.freeSpace + self._size),))
+            ctx.logger.debug("failed to set size: %dMB short" % (size - (self.vg.freeSpace + self.vgSpaceUsed),))
             raise ValueError("not enough free space in volume group")
 
     size = property(Device._getSize, _setSize)
