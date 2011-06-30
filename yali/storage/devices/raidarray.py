@@ -301,7 +301,6 @@ class RaidArray(Device):
         state_file = "/sys/%s/md/array_state" % self.sysfsPath
         if os.access(state_file, os.R_OK):
             state = open(state_file).read().strip()
-            ctx.logger.debug("%s state is %s" % (self.name, state))
             if state in ("clean", "active", "active-idle", "readonly", "read-auto"):
                 status = True
             # mdcontainers have state inactive when started (clear if stopped)
@@ -317,7 +316,6 @@ class RaidArray(Device):
         degraded_file = "/sys/%s/md/degraded" % self.sysfsPath
         if os.access(degraded_file, os.R_OK):
             val = open(degraded_file).read().strip()
-            ctx.logger.debug("%s degraded is %s" % (self.name, val))
             if val == "1":
                 rc = True
 

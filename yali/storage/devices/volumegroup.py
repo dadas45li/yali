@@ -311,12 +311,9 @@ class VolumeGroup(DeviceMapper):
         """ Total space used by snapshots in this volume group. """
         used = 0
         for lv in self.lvs:
-            ctx.logger.debug("lv %s uses %dMB for snapshots" % (lv.lvname,
-                                                         lv.snapshotSpace))
             used += self.align(lv.snapshotSpace, roundup=True)
 
         for (vname, vsize) in self.voriginSnapshots.items():
-            ctx.logger.debug("snapshot %s with vorigin uses %dMB" % (vname, vsize))
             used += self.align(vsize, roundup=True)
 
         return used
@@ -330,7 +327,6 @@ class VolumeGroup(DeviceMapper):
         # sum up the sizes of the PVs and align to pesize
         size = 0
         for pv in self.pvs:
-            ctx.logger.debug("PV size == %s" % pv.size)
             size += max(0, self.align(pv.size - pv.format.peStart))
 
         return size

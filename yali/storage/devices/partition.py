@@ -227,9 +227,8 @@ class Partition(Device):
         else:
             raise ValueError("partition must be a parted.Partition instance")
 
-        ctx.logger.debug("device %s new partedPartition %s has path %s" % (self.name,
-                                                                    partition,
-                                                                    path))
+        ctx.logger.debug("device %s new partedPartition %s" % (self.name, partition))
+
         self._partedPartition = partition
         self.updateName()
 

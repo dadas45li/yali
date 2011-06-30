@@ -184,7 +184,7 @@ class Chunk(object):
 
     def growRequests(self):
         """ Calculate growth amounts for requests in this chunk. """
-        ctx.logger.debug("Chunk.growRequests: %s" % self)
+        ctx.logger.debug("Chunk.growRequests: %r" % self)
 
         # sort the partitions by start sector
         self.requests.sort(key=lambda r: r.partition.partedPartition.geometry.start)
@@ -1039,14 +1039,13 @@ def allocatePartitions(storage, disks, partitions, freespace):
                 if update:
                     # now we know we are choosing a new free space,
                     # so update the disk and part type
-                    ctx.logger.debug("updating use_disk to %s (%s), type: %s"
-                                % (_disk, _disk.name, new_part_type))
+                    ctx.logger.debug("updating use_disk to %s, type: %s"
+                                % (_disk.name, new_part_type))
                     part_type = new_part_type
                     use_disk = _disk
-                    ctx.logger.debug("new free: %s (%d-%d / %dMB)" % (best,
-                                                               best.start,
-                                                               best.end,
-                                                               best.getSize()))
+                    ctx.logger.debug("new free: %d-%d / %dMB" % (best.start,
+                                                          best.end,
+                                                          best.getSize()))
                     ctx.logger.debug("new free allows for %d sectors of growth" %
                                 growth)
                     free = best
@@ -1675,9 +1674,6 @@ def doAutoPartition(storage):
             return False
 
         _schedulePartitions(storage, disks)
-
-    # sanity check the individual devices
-    #ctx.logger.warning("not sanity checking devices because I don't know how yet")
 
     # run the autopart function to allocate and grow partitions
     try:

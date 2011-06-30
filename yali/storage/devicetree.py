@@ -4,6 +4,7 @@
 import os
 import block
 import parted
+import pprint
 import gettext
 _ = gettext.translation('yali', fallback=True).ugettext
 
@@ -131,7 +132,7 @@ class DeviceTree(object):
                 raise DeviceTreeError("parent device not in tree")
 
         self._devices.append(device)
-        ctx.logger.debug("added %s %s (id %d) to device tree" % (device.type, device.name, device.id))
+        ctx.logger.info("added %s %s (id %d) to device tree" % (device.type, device.name, device.id))
 
     def _removeDevice(self, device, force=None, moddisk=True):
         """ Remove a device from the tree.
@@ -164,7 +165,7 @@ class DeviceTree(object):
                     dev.updateName()
 
         self._devices.remove(device)
-        ctx.logger.debug("removed %s %s (id %d) from device tree" % (device.type,
+        ctx.logger.info("removed %s %s (id %d) from device tree" % (device.type,
                                                                      device.name,
                                                                      device.id))
 
@@ -194,7 +195,7 @@ class DeviceTree(object):
                operation.device.format.mountpoint in self.filesystems:
                 raise DeviceTreeError("mountpoint already in use")
 
-        ctx.logger.debug("registered operation: %s" % operation)
+        ctx.logger.info("registered operation: %s" % operation)
         self.operations.append(operation)
 
     def removeOperation(self, operation):
@@ -599,7 +600,7 @@ class DeviceTree(object):
             ctx.logger.debug("%s is a raid array" % name)
         else:
             diskType = Disk
-            ctx.logger.debug("%s is a disk" % name)
+            ctx.logger.info("%s is a disk" % name)
 
 
         device = diskType(name,
@@ -629,7 +630,7 @@ class DeviceTree(object):
         sysfs_path = udev_device_get_sysfs_path(info)
 
         if self.isIgnored(info):
-            ctx.logger.debug("ignoring %s (%s)" % (name, sysfs_path))
+            ctx.logger.info("ignoring %s (%s)" % (name, sysfs_path))
             if name not in self._ignoredDisks:
                 self.addIgnoredDisk(name)
             return
@@ -641,27 +642,27 @@ class DeviceTree(object):
             # we successfully looked up the device. skip to format handling.
             pass
         elif udev_device_is_dm(info):
-            ctx.logger.debug("%s is a device-mapper device" % name)
+            ctx.logger.info("%s is a device-mapper device" % name)
             device = self.addDeviceMapper(info)
          elif udev_device_is_dm(info) and udev_device_is_dm_mpath(info):
-             ctx.logger.debug("%s is a multipath device" % name)
+             ctx.logger.info("%s is a multipath device" % name)
             device = self.addDeviceMapper(info)
         elif udev_device_is_dm_lvm(info):
-            ctx.logger.debug("%s is an lvm logical volume" % name)
+            ctx.logger.info("%s is an lvm logical volume" % name)
             device = self.addLogicalVolume(info)
         elif udev_device_is_md(info) and not udev_device_get_md_container(info):
-            ctx.logger.debug("%s is an md device" % name)
+            ctx.logger.info("%s is an md device" % name)
             if uuid:
                 # try to find the device by uuid
                 device = self.getDeviceByUUID(uuid)
             if device is None:
                 device = self.addRaidArray(info)
         elif udev_device_is_cdrom(info):
-            ctx.logger.debug("%s is a cdrom" % name)
+            ctx.logger.info("%s is a cdrom" % name)
             if device is None:
                 device = self.addOpticalDevice(info)
         elif udev_device_is_biosraid_member(info) and udev_device_is_disk(info):
-            ctx.logger.debug("%s is part of a biosraid" % name)
+            ctx.logger.info("%s is part of a biosraid" % name)
             device = Disk(name,
                           major=udev_device_get_major(info),
                           minor=udev_device_get_minor(info),
@@ -670,7 +671,7 @@ class DeviceTree(object):
         elif udev_device_is_disk(info):
             device = self.addDisk(info)
         elif udev_device_is_partition(info):
-            ctx.logger.debug("%s is a partition" % name)
+            ctx.logger.info("%s is a partition" % name)
             device = self.addPartition(info)
         else:
             ctx.logger.error("Unknown block device type for: %s" % name)
@@ -684,9 +685,9 @@ class DeviceTree(object):
 
         ctx.logger.debug("%s is created as : %s" % (name, device))
         self.handleFormat(info, device)
-        ctx.logger.debug("got device: %s" % device)
+        ctx.logger.info("got device: %s" % device)
         if device.format.type:
-            ctx.logger.debug("%s device has format: %s" % (name, device.format))
+            ctx.logger.info("%s device has format: %s" % (name, device.format))
         device.originalFormat = device.format
 
     def handleFormat(self, info, device):
@@ -734,20 +735,20 @@ class DeviceTree(object):
             try:
                 kwargs["vgName"] = udev_device_get_vg_name(info)
             except KeyError as e:
-                ctx.logger.debug("PV %s has no vg_name" % name)
+                ctx.logger.info("PV %s has no vg_name" % name)
             try:
                 kwargs["vgUuid"] = udev_device_get_vg_uuid(info)
             except KeyError:
-                ctx.logger.debug("PV %s has no vg_uuid" % name)
+                ctx.logger.info("PV %s has no vg_uuid" % name)
             try:
                 kwargs["peStart"] = udev_device_get_pv_pe_start(info)
             except KeyError:
-                ctx.logger.debug("PV %s has no pe_start" % name)
+                ctx.logger.info("PV %s has no pe_start" % name)
         elif format_type in RaidMember._udevTypes:
             try:
                 kwargs["mdUuid"] = udev_device_get_md_uuid(info)
             except KeyError:
-                ctx.logger.debug("mdraid member %s has no md uuid" % name)
+                ctx.logger.info("mdraid member %s has no md uuid" % name)
             kwargs["biosraid"] = udev_device_is_biosraid_member(info)
         if format_type == "vfat":
             if isinstance(device, Partition) and device.bootable:
@@ -762,10 +763,10 @@ class DeviceTree(object):
                 if apple.minSize <= device.size <= apple.maxSize:
                     args[0] = "appleboot"
         try:
-            ctx.logger.debug("type detected on '%s' is '%s'" % (name, format_type,))
+            ctx.logger.info("type detected on '%s' is '%s'" % (name, format_type,))
             device.format = formats.getFormat(*args, **kwargs)
         except FilesystemError:
-            ctx.logger.debug("type '%s' on '%s' invalid, assuming no format" %
+            ctx.logger.warning("type '%s' on '%s' invalid, assuming no format" %
                       (format_type, name,))
             device.format = formats.Format()
             return
@@ -999,7 +1000,7 @@ class DeviceTree(object):
 
                 md_name = "md%d" % minor
 
-            ctx.logger.debug("using name %s for md array containing member %s"
+            ctx.logger.info("using name %s for md array containing member %s"
                              % (md_name, device.name))
             md_array = RaidArray(md_name,
                                  level=md_level,
@@ -1097,7 +1098,7 @@ class DeviceTree(object):
             lv_name = lv_names[index]
             name = "%s-%s" % (vg_name, lv_name)
             if lv_attr[index][0] in 'Ss':
-                ctx.logger.debug("found lvm snapshot volume '%s'" % name)
+                ctx.logger.info("found lvm snapshot volume '%s'" % name)
                 origin_name = lvm.lvorigin(vg_name, lv_name)
                 if not origin_name:
                     ctx.logger.error("lvm snapshot '%s-%s' has unknown origin" %
@@ -1159,7 +1160,7 @@ class DeviceTree(object):
                 vg.destroy()
             except DeviceError:
                 # the pvremoves will finish the job.
-                ctx.logger.debug("There was an error destroying the VG %s." % vg.name)
+                ctx.logger.info("There was an error destroying the VG %s." % vg.name)
 
             # remove VG device from list.
             self._removeDevice(vg)
@@ -1249,6 +1250,8 @@ class DeviceTree(object):
 
     def populate(self):
         """Locate all storage devices."""
+        ctx.logger.info("DeviceTree.populate: ignoredDisks is %s ; exclusiveDisks is %s"
+                     % (self._ignoredDisks, self.exclusiveDisks))
         self._populated = False
 
         devices = udev_get_block_devices()
