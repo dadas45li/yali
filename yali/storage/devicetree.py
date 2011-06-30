@@ -50,7 +50,7 @@ class DeviceTree(object):
         self.reinitializeDisks = reinitializeDisks
 
         # protected device specs as provided by the user
-        self.protectedDevSpecs = protected
+        self.protectedDeviceSpecs = protected
 
         # names of protected devices at the time of tree population
         self.protectedDeviceNames = []
@@ -1253,6 +1253,12 @@ class DeviceTree(object):
         ctx.logger.info("DeviceTree.populate: ignoredDisks is %s ; exclusiveDisks is %s"
                      % (self._ignoredDisks, self.exclusiveDisks))
         self._populated = False
+
+        for spec in self.protectedDeviceSpecs:
+            name = udev_resolve_devspec(spec)
+            ctx.logger.debug("protected device spec %s resolved to %s" % (spec, name))
+            if name:
+                self.protectedDeviceNames.append(name)
 
         devices = udev_get_block_devices()
         for device in devices:
