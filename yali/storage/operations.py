@@ -1,6 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
+import math
 from parted import partitionFlag, PARTITION_LBA
 import yali.baseudev
 from devices.device import Device
@@ -152,7 +150,7 @@ class DeviceOperation(object):
     def __str__(self):
         s = "[%d] %s %s" % (self.id, operation_strings[self.type], object_strings[self.obj])
         if self.isResize:
-             s += " (%s)" % resize_type_from_strings[self.dir]
+             s += " (%s)" % resize_type_from_string[self.dir]
         if self.isFormat:
             s += " %s" % self.format.desc
             if self.isMigrate:

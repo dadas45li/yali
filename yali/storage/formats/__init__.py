@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 
 import os
 import gettext
@@ -10,8 +9,8 @@ _ = __trans.ugettext
 import yali.util
 import yali.context as ctx
 from yali.storage import StorageError
-from yali.storage.library import devicemapper
-from yali.storage.udev import udev_device_get_minor
+from yali.storage.library.devicemapper import DeviceMapperError, dm_node_from_name
+from yali.storage.udev import udev_device_get_minor, udev_device_get_major, udev_get_device
 device_formats = {}
 
 def getFormat(type, *args, **kwargs):
@@ -212,7 +211,7 @@ class Format(object):
 
         if self.device.startswith("/dev/mapper/"):
             try:
-                name = devicemapper.dm_node_from_name(os.path.basename(self.device))
+                name = dm_node_from_name(os.path.basename(self.device))
             except Exception, e:
                 ctx.logger.warning("failed to get dm node for %s" % self.device)
                 return
@@ -365,7 +364,7 @@ class Format(object):
             # If this is a device-mapper device, we have to get the DM node and
             # build the sysfs path from that.
             try:
-                device = devicemapper.dm_node_from_name(os.path.basename(self.device))
+                device = dm_node_from_name(os.path.basename(self.device))
             except DeviceMapperError:
                 device = self.device
 

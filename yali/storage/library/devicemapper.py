@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 import os
 import block
 import yali.context as ctx
@@ -19,7 +18,7 @@ def name_from_dm_node(dm_node):
 
     return name
 
-def dm_node_from_name(name):
+def dm_node_from_name(map_name):
     named_path = "/dev/mapper/%s" % map_name
     try:
         # /dev/mapper/ nodes are usually symlinks to /dev/dm-N
