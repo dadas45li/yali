@@ -714,3 +714,9 @@ def get_collections():
 
     return packageCollection
 
+def bestDiskLabelType():
+    if isEfi():
+        labelType = "gpt"
+    else:
+        labelType = "msdos"
+    return labelType

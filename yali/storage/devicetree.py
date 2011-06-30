@@ -783,8 +783,10 @@ class DeviceTree(object):
             self.handleDMRaidMemberFormat(info, device)
 
     def handleDiskLabelFormat(self, info, device):
-        # if there is preexisting formatting on the device use it
-        if formats.getFormat(udev_device_get_format(info)).type is not None:
+        disklabel_type = info.get("PART_TABLE_TYPE")
+        # if there is no disklabel on the device
+        if disklabel_type is None and \
+           getFormat(udev_device_get_format(info)).type is not None:
             ctx.logger.debug("device %s does not contain a disklabel" % device.name)
             return
 
@@ -805,15 +807,11 @@ class DeviceTree(object):
             try:
                 format = formats.getFormat("disklabel",
                                    device=device.path,
+                                   labelType=disklabel_type,
                                    exists=True)
             except InvalidDiskLabelError:
-                pass
-            else:
-                if format.partitions:
-                    # parted's checks for disklabel presence are less than
-                    # rigorous, so we will assume that detected disklabels
-                    # with no partitions are spurious
-                    device.format = format
+                ctx.logger.warning("disklabel detected but not usable on %s"
+                            % device.name)
             return
 
         # if the disk contains protected partitions we will not wipe the
@@ -852,15 +850,19 @@ class DeviceTree(object):
             initcb = lambda: questionInitializeDisk(ctx.interface, bypath, description,
                                                     device.size, device.name)
 
+        labelType = yali.util.bestDiskLabelType()
+
         try:
             format = formats.getFormat("disklabel",
                                device=device.path,
+                               labelType=labelType,
                                exists=not initlabel)
         except InvalidDiskLabelError:
             # if we have a cb function use it. else we ignore the device.
             if initcb is not None and initcb():
                 format = formats.getFormat("disklabel",
                                    device=device.path,
+                                   labelType=labelType,
                                    exists=False)
             else:
                 self._removeDevice(device)

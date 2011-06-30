@@ -34,11 +34,16 @@ class DiskLabel(Format):
 
             Keyword Arguments:
 
+                labelType -- type of disklabel to create
                 device -- path to the underlying device
                 exists -- indicates whether this is an existing format
 
         """
         Format.__init__(self, *args, **kwargs)
+        if not self.exists:
+            self._labelType = kwargs.get("labelType", "msdos")
+        else:
+            self._labelType = None
 
         self._size = None
 
@@ -91,12 +96,7 @@ class DiskLabel(Format):
 
     def freshPartedDisk(self):
         """ Return a new, empty parted.Disk instance for this device. """
-        if yali.util.isEfi():
-            labelType = "gpt"
-        else:
-            labelType = "msdos"
-
-        return parted.freshDisk(device=self.partedDevice, ty=labelType)
+        return parted.freshDisk(device=self.partedDevice, ty=self._labelType)
 
     @property
     def partedDisk(self):
@@ -114,6 +114,7 @@ class DiskLabel(Format):
                     # same as if the device had no label (cause it really
                     # doesn't).
                     raise InvalidDiskLabelError()
+                self._labelType = self._partedDisk.type
             else:
                 self._partedDisk = self.freshPartedDisk()
 

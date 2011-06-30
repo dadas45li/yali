@@ -367,7 +367,8 @@ def clearPartitions(storage):
                     devices.remove(leaf)
 
             destroy = OperationDestroyFormat(disk)
-            newLabel = getFormat("disklabel", device=disk.path)
+            labelType = yali.util.bestDiskLabelType()
+            newLabel = getFormat("disklabel", device=disk.path, labelType=labelType)
             create = OperationCreateFormat(disk, format=newLabel)
             storage.devicetree.addOperation(destroy)
             storage.devicetree.addOperation(create)
@@ -397,11 +398,7 @@ def clearPartitions(storage):
         if filter(lambda p: p.dependsOn(disk), storage.protectedDevices):
             continue
 
-        if yali.util.isEfi():
-            nativeLabelType = "gpt"
-        else:
-            nativeLabelType = "msdos"
-
+        nativeLabelType = yali.util.bestDiskLabelType()
         if disk.format.labelType == nativeLabelType:
             continue
 
@@ -415,7 +412,7 @@ def clearPartitions(storage):
                     storage.devicetree._removeDevice(part, moddisk=False)
 
         destroy = OperationDestroyFormat(disk)
-        newLabel = getFormat("disklabel", device=disk.path)
+        newLabel = getFormat("disklabel", device=disk.path, labelType=nativeLabelType)
         create = OperationCreateFormat(disk, format=newLabel)
         storage.devicetree.addOperation(destroy)
         storage.devicetree.addOperation(create)
