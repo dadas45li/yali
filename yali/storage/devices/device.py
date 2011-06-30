@@ -281,6 +281,7 @@ class Device(AbstractDevice):
             raise DeviceError("cannot replace active format", self.name)
 
         self._format = format
+        self._format.device = self.path
 
     def _getFormat(self):
         return self._format
