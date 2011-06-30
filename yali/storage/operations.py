@@ -435,11 +435,10 @@ class OperationDestroyFormat(DeviceOperation):
 
     def execute(self, intf=None):
         """ wipe the filesystem signature from the device """
-        if self.origFormat:
-            self.device.setup(orig=True)
-            self.origFormat.destroy()
-            yali.baseudev.udev_settle()
-            self.device.teardown()
+        self.device.setup(orig=True)
+        self.format.destroy()
+        yali.baseudev.udev_settle()
+        self.device.teardown()
 
     def cancel(self):
         self.device.format = self.origFormat
@@ -469,7 +468,8 @@ class OperationDestroyFormat(DeviceOperation):
         return (self.device.id == operation.device.id and
                 self.obj == self.obj and
                 (self.id > operation.id or
-                 self.id == operation.id and not self.device.exists))
+                 (self.id == operation.id and not self.format.exists)) and
+                not (operation.format.exists and not self.format.exists))
 
 
 
