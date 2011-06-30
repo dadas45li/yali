@@ -99,12 +99,21 @@ class Filesystem(Format):
         if self.supported:
             self.loadModule()
 
-    def __str__(self):
-        s = Format.__str__(self)
+    def __repr__(self):
+        s = Format.__repr__(self)
         s += ("  mountpoint = %(mountpoint)s  mountopts = %(mountopts)s\n"
-              "  label = %(label)s  size = %(size)s\n" %
+              "  label = %(label)s  size = %(size)s"
+              "  targetSize = %(targetSize)s\n" %
               {"mountpoint": self.mountpoint, "mountopts": self.mountopts,
-               "label": self.label, "size": self._size})
+               "label": self.label, "size": self._size,
+               "targetSize": self.targetSize})
+        return s
+
+    @property
+    def desc(self):
+        s = "%s filesystem" % self.type
+        if self.mountpoint:
+            s += " mounted at %s" % self.mountpoint
         return s
 
     def _setTargetSize(self, newsize):

@@ -104,9 +104,10 @@ class LogicalVolume(DeviceMapper):
         # here we go with the circular references
         self.vg._addLogicalVolume(self)
 
-    def __str__(self):
-        s = DeviceMapper.__str__(self)
-        s += ("  VG device = %(vgdev)r  percent = %(percent)s\n"
+    def __repr__(self):
+        s = DeviceMapper.__repr__(self)
+        s += ("  VG device = %(vgdev)r\n"
+              "  percent = %(percent)s\n"
               "  mirrored = %(mirrored)s stripes = %(stripes)d"
               "  snapshot total =  %(snapshots)dMB\n"
               "  VG space used = %(vgspace)dMB" %

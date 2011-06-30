@@ -41,7 +41,7 @@ class PhysicalVolume(Format):
         self.vgUuid = kwargs.get("vgUuid")
         self.peStart = kwargs.get("peStart", 1.0)    # in MB
 
-    def __str__(self):
+    def __repr__(self):
         s = Format.__str__(self)
         s += ("  vgName = %(vgName)s  vgUUID = %(vgUUID)s"
               "  peStart = %(peStart)s" %

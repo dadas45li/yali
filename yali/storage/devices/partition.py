@@ -130,11 +130,12 @@ class Partition(Device):
 
             self.req_base_weight = weight
 
-    def __str__(self):
-        s = Device.__str__(self)
-        s += ("  grow = %(grow)s max size = %(maxsize)s  bootable = %(bootable)s\n"
+    def __repr__(self):
+        s = Device.__repr__(self)
+        s += ("  grow = %(grow)s  max size = %(maxsize)s  bootable = %(bootable)s\n"
               "  part type = %(partType)s  primary = %(primary)s\n"
-              "  partedPartition = %(partedPart)r  disk = %(disk)r\n" %
+              "  partedPartition = %(partedPart)s\n"
+              "  disk = %(disk)s\n" %
               {"grow": self.req_grow, "maxsize": self.req_max_size,
                "bootable": self.bootable, "partType": self.partType,
                "primary": self.req_primary,

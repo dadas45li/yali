@@ -66,7 +66,7 @@ class Request(object):
         """ The id of the Partition this request corresponds to. """
         return self.partition.id
 
-    def __str__(self):
+    def __repr__(self):
         s = ("%(type)s instance --\n"
              "id = %(id)s  name = %(name)s  growable = %(growable)s\n"
              "base = %(base)d  growth = %(growth)d  max_grow = %(max_grow)d\n"
@@ -102,7 +102,7 @@ class Chunk(object):
             for req in requests:
                 self.addRequest(req)
 
-    def __str__(self):
+    def __repr__(self):
         s = ("%(type)s instance --\n"
              "device = %(device)s  start = %(start)d  end = %(end)d\n"
              "length = %(length)d  size = %(size)d pool = %(pool)d\n"
@@ -115,6 +115,12 @@ class Chunk(object):
               "sectorSize": self.sectorSize})
 
         return s
+
+    def __str__(self):
+        s = "%d-%d on %s" % (self.geometry.start, self.geometry.end,
+                             self.geometry.device.path)
+        return s
+
 
     def addRequest(self, req):
         """ Add a Request to this chunk. """

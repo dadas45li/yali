@@ -74,14 +74,14 @@ class DiskLabel(Format):
 
         return new
 
-    def __str__(self):
-        s = Format.__str__(self)
+    def __repr__(self):
+        s = Format.__repr__(self)
         s += ("  type = %(type)s  partition count = %(count)s"
               "  sectorSize = %(sectorSize)s\n"
               "  align_offset = %(offset)s  align_grain = %(grain)s\n"
-              "  partedDisk = %(disk)r\n"
+              "  partedDisk = %(disk)s\n"
               "  origPartedDisk = %(orig_disk)r\n"
-              "  partedDevice = %(dev)r\n" %
+              "  partedDevice = %(dev)s\n" %
               {"type": self.labelType, "count": len(self.partitions),
                "sectorSize": self.partedDevice.sectorSize,
                "offset": self.alignment.offset,
@@ -89,6 +89,11 @@ class DiskLabel(Format):
                "disk": self.partedDisk, "orig_disk": self._origPartedDisk,
                "dev": self.partedDevice})
         return s
+
+    @property
+    def desc(self):
+        return "%s %s" % (self.labelType, self.type)
+
 
     def resetPartedDisk(self):
         """ Set this instance's partedDisk to reflect the disk's contents. """

@@ -58,8 +58,8 @@ class DMRaidMember(Format):
         # Initialize the attribute that will hold the block object.
         self._raidmem = None
 
-    def __str__(self):
-        s = Format.__str__(self)
+    def __repr__(self):
+        s = Format.__repr__(self)
         s += ("  raidmem = %(raidmem)r" % {"raidmem": self.raidmem})
         return s
 

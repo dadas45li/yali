@@ -103,18 +103,21 @@ class Device(AbstractDevice):
 
         self._partedDevice = None
 
-    def __str__(self):
-        s = AbstractDevice.__str__(self)
-        s += ("  uuid = %(uuid)s  format = %(format)r  size = %(size)s\n"
-              "  major = %(major)s  minor = %(minor)r  exists = %(exists)s\n"
-              "  sysfs path = %(sysfs)s  partedDevice = %(partedDevice)r\n"
+    def __repr__(self):
+        s = AbstractDevice.__repr__(self)
+        s += ("  uuid = %(uuid)s  size = %(size)s\n"
+              "  format = %(format)s\n"
+              "  major = %(major)s  minor = %(minor)s  exists = %(exists)s"
+              "  protected = %(protected)s\n"
+              "  sysfs path = %(sysfs)s  partedDevice = %(partedDevice)s\n"
               "  target size = %(targetSize)s  path = %(path)s\n"
               "  format args = %(formatArgs)s  originalFormat = %(origFmt)s" %
               {"uuid": self.uuid, "format": self.format, "size": self.size,
                "major": self.major, "minor": self.minor, "exists": self.exists,
                "sysfs": self.sysfsPath, "partedDevice": self.partedDevice,
                "targetSize": self.targetSize, "path": self.path,
-               "formatArgs": self.formatArgs, "origFmt": self.originalFormat})
+               "protected": self.protected,
+               "formatArgs": self.formatArgs, "origFmt": self.originalFormat.type})
         return s
 
     @property

@@ -1,6 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 import os
 import parted
 
@@ -45,8 +43,8 @@ class Disk(Device):
                         model=model, serial=serial, vendor=vendor,bus=bus,
                         sysfsPath=sysfsPath, parents=parents)
 
-    def __str__(self):
-        s = Device.__str__(self)
+    def __repr__(self):
+        s = Device.__repr__(self)
         s += ("  removable = %(removable)s  partedDevice = %(partedDevice)r" %
               {"removable": self.removable, "partedDevice": self.partedDevice})
         return s

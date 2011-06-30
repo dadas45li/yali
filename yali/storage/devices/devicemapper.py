@@ -42,8 +42,8 @@ class DeviceMapper(Device):
         self.target = target
         self.dmUuid = dmUuid
 
-    def __str__(self):
-        s = Device.__str__(self)
+    def __repr__(self):
+        s = Device.__repr__(self)
         s += ("  target = %(target)s  dmUuid = %(dmUuid)s" %
               {"target": self.target, "dmUuid": self.dmUuid})
         return s

@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 import os
 import math
+import pprint
 import gettext
+
 
 __trans = gettext.translation('yali', fallback=True)
 _ = __trans.ugettext
@@ -91,8 +93,8 @@ class VolumeGroup(DeviceMapper):
         # They still occupy space in the VG.
         self.voriginSnapshots = {}
 
-    def __str__(self):
-        s = DeviceMapper.__str__(self)
+    def __repr__(self):
+        s = DeviceMapper.__repr__(self)
         s += ("  free = %(free)s  PE Size = %(peSize)s  PE Count = %(peCount)s\n"
               "  PE Free = %(peFree)s  PV Count = %(pvCount)s\n"
               "  LV Names = %(lv_names)s  modified = %(modified)s\n"
@@ -104,7 +106,9 @@ class VolumeGroup(DeviceMapper):
                "peFree": self.peFree, "pvCount": self.pvCount,
                "lv_names": self.lv_names, "modified": self.isModified,
                "extents": self.extents, "freeSpace": self.freeSpace,
-               "freeExtents": self.freeExtents, "pvs": self.pvs, "lvs": self.lvs})
+               "freeExtents": self.freeExtents,
+               "pvs": pprint.pformat([str(p) for p in self.pvs]),
+               "lvs": pprint.pformat([str(l) for l in self.lvs])})
         return s
 
     @property

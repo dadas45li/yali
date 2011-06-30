@@ -40,7 +40,7 @@ class SwapSpace(Format):
         self.priority = kwargs.get("priority")
         self.label = kwargs.get("label")
 
-    def __str__(self):
+    def __repr__(self):
         s = Format.__str__(self)
         s += ("  priority = %(priority)s  label = %(label)s" %
               {"priority": self.priority, "label": self.label})

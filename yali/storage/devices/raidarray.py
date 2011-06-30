@@ -151,8 +151,8 @@ class RaidArray(Device):
         else:
             return "MDRAID set (%s)" % levelstr
 
-    def __str__(self):
-        s = Device.__str__(self)
+    def __repr__(self):
+        s = Device.__repr__(self)
         s += ("  level = %(level)s  spares = %(spares)s\n"
               "  members = %(memberDevices)s\n"
               "  total devices = %(totalDevices)s" %

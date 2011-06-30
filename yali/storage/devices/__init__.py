@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import copy
 import gettext
+import pprint
 __trans = gettext.translation('yali', fallback=True)
 _ = __trans.ugettext
 
@@ -51,15 +52,26 @@ class AbstractDevice(object):
 
         return new
 
-    def __str__(self):
+    def __repr__(self):
         s = ("%(type)s instance (%(id)s) --\n"
              "  name = %(name)s  status = %(status)s"
-             "  parents = %(parents)s\n"
-             "  kids = %(kids)s\n"
-             "  id = %(dev_id)s\n" %
+             "  kids = %(kids)s id = %(dev_id)s\n"
+             "  parents = %(parents)s\n" %
              {"type": self.__class__.__name__, "id": "%#x" % id(self),
-              "name": self.name, "parents": [parent.name for parent in self.parents], "kids": self.kids,
-              "status": self.status, "dev_id": self.id})
+              "name": self.name, "kids": self.kids, "status": self.status,
+              "dev_id": self.id,
+              "parents": pprint.pformat([str(p) for p in self.parents])})
+        return s
+
+    def __str__(self):
+        exist = "existing"
+        if not self.exists:
+            exist = "non-existent"
+        s = "%s %dMB %s %s (%d)" % (exist, self.size, self.type, self.name,
+                                    self.id)
+        if self.format.type:
+            s += " with %s" % self.format
+
         return s
 
     @property

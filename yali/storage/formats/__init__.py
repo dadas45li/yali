@@ -141,7 +141,7 @@ class Format(object):
         self._majorminor = None
         self._migrate = False
 
-    def __str__(self):
+    def __repr__(self):
         s = ("%(classname)s instance (%(id)s) --\n"
              "  type = %(type)s  name = %(name)s  status = %(status)s\n"
              "  device = %(device)s  uuid = %(uuid)s  exists = %(exists)s\n"
@@ -156,6 +156,20 @@ class Format(object):
               "mount": self.mountable,
               "maxSize": self.maxSize, "minSize": self.minSize})
         return s
+
+    @property
+    def _existence_str(self):
+        exist = "existing"
+        if not self.exists:
+            exist = "non-existent"
+        return exist
+
+    @property
+    def desc(self):
+        return str(self.type)
+
+    def __str__(self):
+        return "%s %s" % (self._existence_str, self.desc)
 
     def _setOptions(self, options):
         self._options = options

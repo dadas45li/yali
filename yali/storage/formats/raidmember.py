@@ -43,7 +43,7 @@ class RaidMember(Format):
 
         self.biosraid = kwargs.get("biosraid")
 
-    def __str__(self):
+    def __repr__(self):
         s = Format.__str__(self)
         s += ("  mdUUID = %(mdUUID)s  biosraid = %(biosraid)s" %
               {"mdUUID": self.mdUuid, "biosraid": self.biosraid})
