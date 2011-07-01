@@ -330,7 +330,7 @@ class DeviceTree(object):
         #     sda5 in the course of partitioning), so we access the list
         #     directly here.
         for device in self._devices:
-            if isinstance(device, PartitionDevice) and \
+            if isinstance(device, Partition) and \
                device.isExtended and not device.exists:
                 # don't properly register the operation since the device is
                 # already in the tree
@@ -361,7 +361,7 @@ class DeviceTree(object):
                 udev_settle()
                 for device in self._devices:
                     # make sure we catch any renumbering parted does
-                    if device.exists and isinstance(device, PartitionDevice):
+                    if device.exists and isinstance(device, Partition):
                         device.updateName()
                         device.format.device = device.path
 
@@ -644,8 +644,8 @@ class DeviceTree(object):
         elif udev_device_is_dm(info):
             ctx.logger.info("%s is a device-mapper device" % name)
             device = self.addDeviceMapper(info)
-         elif udev_device_is_dm(info) and udev_device_is_dm_mpath(info):
-             ctx.logger.info("%s is a multipath device" % name)
+        elif udev_device_is_dm(info) and udev_device_is_dm_mpath(info):
+            ctx.logger.info("%s is a multipath device" % name)
             device = self.addDeviceMapper(info)
         elif udev_device_is_dm_lvm(info):
             ctx.logger.info("%s is an lvm logical volume" % name)
@@ -1119,8 +1119,8 @@ class DeviceTree(object):
                                 (lv_sizes[index], origin.name))
                 origin.snapshotSpace += lv_sizes[index]
                 continue
-+            elif lv_attr[index][0] in 'Iilv':
-+                # skip mirror images, log volumes, and vorigins
+            elif lv_attr[index][0] in 'Iilv':
+                # skip mirror images, log volumes, and vorigins
                 continue
 
             log_size = 0

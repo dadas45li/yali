@@ -8,7 +8,7 @@ _ = __trans.ugettext
 
 import yali.util
 from yali.baseudev import udev_settle
-from yali.stoarage.devices.device import Device, DeviceError
+from yali.storage.devices.device import Device, DeviceError
 from yali.storage.library import devicemapper
 
 class DeviceMapperError(DeviceError):

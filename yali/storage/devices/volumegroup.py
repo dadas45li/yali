@@ -13,7 +13,7 @@ import yali.context as ctx
 from yali.util import numeric_type
 from yali.storage.library import lvm
 from yali.storage.formats import get_device_format
-from dyali.storage.devices.devicemapper import DeviceMapper
+from yali.storage.devices.devicemapper import DeviceMapper
 from yali.storage.devices.device import Device, DeviceError
 
 class VolumeGroupError(DeviceError):

@@ -124,6 +124,10 @@ class DeviceOperation(object):
         return self.type == OPERATION_TYPE_CREATE
 
     @property
+    def isMigrate(self):
+        return self.type == OPERATION_TYPE_MIGRATE
+
+    @property
     def isResize(self):
         return self.type == OPERATION_TYPE_RESIZE
 

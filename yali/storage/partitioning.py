@@ -69,7 +69,7 @@ class PartitionRequest(Request):
 
             Arguments:
 
-                partition -- a PartitionDevice instance
+                partition -- a Partition instance
 
         """
         super(PartitionRequest, self).__init__(partition)

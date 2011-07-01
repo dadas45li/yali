@@ -24,7 +24,7 @@ import gettext
 __trans = gettext.translation('yali', fallback=True)
 _ = __trans.ugettext
 
-import _sysutils
+import yali._sysutils
 
 def available_space(path):
     return _sysutils.device_space_free(path)

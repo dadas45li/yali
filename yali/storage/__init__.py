@@ -615,7 +615,7 @@ class Storage(object):
         return protected
 
     def newPartition(self, *args, **kwargs):
-        """ Return a new PartitionDevice instance for configuring. """
+        """ Return a new Partition instance for configuring. """
         if kwargs.has_key("fmt_type"):
             kwargs["format"] = getFormat(kwargs.pop("fmt_type"),
                                          mountpoint=kwargs.pop("mountpoint",None),
