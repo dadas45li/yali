@@ -44,3 +44,6 @@
      - LVM/RAID support
      ? Fat32 resize
 
+ Testing
+ --------------------------------------------------------
+     - Shortcuts for openqa test
